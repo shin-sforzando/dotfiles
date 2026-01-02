@@ -1,0 +1,96 @@
+[user]
+	name = Shin'ichiro Suzuki
+	email = shin@sforzando.co.jp
+	signingkey = 9269867E64CB5B3F52B97A1EE87D7A5449F25074
+[alias]
+	a = add
+	ad = add
+	au = add -u
+	alias = config --get-regexp ^alias
+	amend = commit --amend
+	b = branch
+	br = branch
+	brd = branch --delete
+	c = commit -m
+	ca = commit -am
+	cam = commit --amend -am
+	ci = commit
+	cl = config --list
+	co = checkout
+	cob = checkout -b
+	cp = cherry-pick
+	d = diff
+	dc = diff --cached
+	discard = checkout --
+	dl = diff HEAD^
+	ds = diff --stat
+	f = fetch
+	flash = "!git fetch --prune --all && git pull --rebase"
+	fpr = "!f(){ git fetch origin pull/$1/head:$1; git checkout $1; };f"
+	gr = grep
+	graph = log --graph --date=short --decorate=short --pretty=format:'%Cgreen%h %Creset%cd %Cblue%cn %Cred%d %Creset%s'
+	grn = grep -n
+	l = log --graph --all --decorate
+	last = show -1 HEAD --stat -p
+	pre = diff --cached --diff-algorithm=minimal -w
+	r = restore
+	s = status
+	sh = show
+	sl = shortlog
+	st = status
+	sw = switch
+	swc = switch -c
+	t = tag
+	uncommit = reset --mixed HEAD~
+	unstage = reset -q HEAD --
+	wip = "commit --allow-empty -m '[wip] Work in progress ... [ci skip]'"
+[init]
+	defaultBranch = main
+[help]
+	autocorrect = 1
+[color]
+	ui = true
+[core]
+	autocrlf = input
+	compression = -1
+	editor = nvim
+	pager = delta
+	excludesfile = ~/.gitignore
+[diff]
+	colorMoved = default
+[interactive]
+	diffFilter = delta --color-only --features=interactive
+[delta]
+	features = decorations
+	navigate = true
+	side-by-side = true
+[delta "interactive"]
+	keep-plus-minus-markers = false
+[credential]
+	helper = osxkeychain
+	helper = cache --timeout 604800
+[gpg]
+	program = gpg
+[fetch]
+	prune = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	process = git-lfs filter-process
+	required = true
+	smudge = git-lfs smudge -- %f
+[ghq]
+	root = ~/Workspace
+[merge]
+	ff = false
+[pull]
+	ff = only
+	rebase = true
+[push]
+	default = tracking
+[secrets]
+	providers = git secrets --aws-provider
+	patterns = [A-Z0-9]{20}
+	patterns = (\"|')?(AWS|aws|Aws)?_?(ACCOUNT|account|Account)_?(ID|id|Id)?(\"|')?\\s*(:|=>|=)\\s*(\"|')?[0-9]{4}\\-?[0-9]{4}\\-?[0-9]{4}(\"|')?
+	patterns = (\"|')?(AWS|aws|Aws)?_?(SECRET|secret|Secret)?_?(ACCESS|access|Access)?_?(KEY|key|Key)(\"|')?\\s*(:|=>|=)\\s*(\"|')?[A-Za-z0-9/\\+=]{40}(\"|')?
+[credential "https://github.com"]
+	useHttpPath = true

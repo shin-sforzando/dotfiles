@@ -1,0 +1,28 @@
+# OAuth tokens, caches, credentials (should NOT be synced)
+.claude.json
+
+# Claude Code runtime files (should NOT be synced)
+.claude/debug/
+.claude/file-history/
+.claude/history.jsonl
+.claude/ide/
+.claude/plans/
+.claude/projects/
+.claude/session-env/
+.claude/shell-snapshots/
+.claude/stats-cache.json
+.claude/statsig/
+.claude/telemetry/
+.claude/todos/
+.claude/.update.lock
+.claude/firebase-debug.log
+.claude/config/
+
+# Zsh runtime files
+.zsh_history
+.zsh_sessions/
+.zcompdump*
+.zsh_completions/
+
+# Local-only files
+.DS_Store

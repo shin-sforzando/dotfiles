@@ -1,0 +1,47 @@
+# This is the configuration file for Ghostty.
+#
+# This template file has been automatically created at the following
+# path since Ghostty couldn't find any existing config files on your system:
+#
+#   /Users/suzuki/Library/Application Support/com.mitchellh.ghostty/config
+#
+# The template does not set any default options, since Ghostty ships
+# with sensible defaults for all options. Users should only need to set
+# options that they want to change from the default.
+#
+# Run `ghostty +show-config --default --docs` to view a list of
+# all available config options and their default values.
+#
+# Additionally, each config option is also explained in detail
+# on Ghostty's website, at https://ghostty.org/docs/config.
+#
+# Ghostty can reload the configuration while running by using the menu
+# options or the bound key (default: Command + Shift + comma on macOS and
+# Control + Shift + comma on other platforms). Not all config options can be
+# reloaded while running; some only apply to new windows and others may require
+# a full restart to take effect.
+
+font-family = HackGen Console NF
+font-size = 14
+font-thicken = true
+window-title-font-family = HackGen Console NF
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+
+# Disable automatic shell integration injection
+# We manually load it in .zshrc to ensure correct hook order
+shell-integration = none
+
+window-padding-x = 8
+window-padding-y = 8
+window-padding-balance = true
+window-save-state = always
+
+background-opacity = 0.75
+background-opacity-cells = true
+# unfocused-split-opacity = 0.5
+# unfocused-split-fill = #000000
+split-divider-color = #cccccc
+
+window-inherit-working-directory = true
+quit-after-last-window-closed = true

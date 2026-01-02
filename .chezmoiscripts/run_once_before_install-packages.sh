@@ -1,0 +1,61 @@
+#!/bin/bash
+set -eufo pipefail
+
+echo "📦 Installing packages..."
+
+# Homebrew installation check
+if ! command -v brew &>/dev/null; then
+    echo "🍺 Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# Install packages from Brewfile
+if [ -f "$HOME/Brewfile" ]; then
+    echo "📦 Installing Homebrew packages..."
+    brew bundle --file="$HOME/Brewfile"
+fi
+
+# Rust: Install cargo-update
+if command -v cargo &>/dev/null; then
+    echo "🦀 Installing cargo-update..."
+    cargo install cargo-update
+fi
+
+# Neovim Python provider
+if command -v uv &>/dev/null; then
+    echo "📝 Installing Neovim Python provider (using uv)..."
+    uv tool install pynvim
+elif command -v pip3 &>/dev/null; then
+    echo "📝 Installing Neovim Python provider (pip3 fallback)..."
+    pip3 install --user pynvim
+fi
+
+# Volta: Install node and global packages
+if command -v volta &>/dev/null; then
+    echo "⚡ Installing node.js via Volta..."
+    volta install node
+
+    echo "📦 Installing global npm packages..."
+    npm install --global commitizen cz-emoji npm-check-updates
+fi
+
+# Create Workspace directory for ghq
+echo "📁 Creating Workspace directory..."
+mkdir -p "$HOME/Workspace"
+
+# .DS_Store on network drives
+echo "🗂️ Configuring .DS_Store settings..."
+defaults write com.apple.desktopservices DSDontWriteNetworkStores True 2>/dev/null || true
+
+echo ""
+echo "🔐 Manual steps required:"
+echo "  1. GPG key setup:"
+echo "     gpg --keyserver hkps://keys.openpgp.org --search-keys shin@sforzando.co.jp"
+echo "     gpg --edit-key KEYID"
+echo "     > trust"
+echo ""
+echo "  2. Set default shell:"
+echo "     sudo chsh -s \$(brew --prefix)/bin/zsh"
+echo ""
+
+echo "✅ Package installation completed!"
