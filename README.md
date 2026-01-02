@@ -43,7 +43,7 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 
 ```bash
 # Install chezmoi and apply dotfiles in one command
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <your-github-username>
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply shin-sforzando
 ```
 
 This will:

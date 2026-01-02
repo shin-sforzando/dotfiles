@@ -1,5 +1,4 @@
 ## Add Homebrew tap
-tap "ramborogers/netventory"
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 
 ## Install Packages
@@ -280,9 +279,6 @@ cask "imageoptim"
 
 # Zip archiver for Windows compatibility
 cask "macwinzipper"
-
-# Network discovery tool
-cask "netventory"
 
 # Markdown-based knowledge base
 cask "obsidian"
