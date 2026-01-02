@@ -30,9 +30,6 @@ brew "deno"
 # Unclutter your .profile
 brew "direnv"
 
-# CLI DNS client, like dig
-brew "dog"
-
 # du + rust = dust, like du but more intuitive
 brew "dust"
 
