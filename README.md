@@ -8,6 +8,7 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
   - [Manual Steps](#manual-steps)
 - [Daily Usage](#daily-usage)
   - [Update dotfiles](#update-dotfiles)
+  - [Edit Brewfile](#edit-brewfile)
   - [Commit and push](#commit-and-push)
   - [Update plugins](#update-plugins)
 - [Structure](#structure)
@@ -75,7 +76,8 @@ chezmoi apply
 
 ### Edit Brewfile
 
-**Important:** `Brewfile` is NOT copied to `~/` to avoid accidental edits. It only exists in the chezmoi source directory.
+> [!IMPORTANT]
+> `Brewfile` is NOT copied to `~/` to avoid accidental edits. It only exists in the chezmoi source directory.
 
 ```bash
 # Edit Brewfile
@@ -92,6 +94,11 @@ brew bundle
 ```
 
 ### Commit and push
+
+> [!NOTE]
+> Auto-commit and auto-push are enabled. Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
+
+If you manually edit files in the source directory, commit manually:
 
 ```bash
 cd ~/.local/share/chezmoi
