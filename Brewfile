@@ -314,7 +314,7 @@ cask "vlc"
 cask "wavebox"
 
 # YubiKey management tool
-cask "yubico-yubikey-manager"
+cask "yubico-authenticator"
 
 ## Install App Store Packages
 # Quick preview for images and files
