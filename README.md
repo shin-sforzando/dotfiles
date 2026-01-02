@@ -1,6 +1,15 @@
 # dotfiles
 
+<!-- Badges -->
+
+[![Last Commit](https://img.shields.io/github/last-commit/shin-sforzando/dotfiles)](https://github.com/shin-sforzando/dotfiles/graphs/commit-activity)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+
+<!-- Synopsis -->
+
 Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sheldon.cli.rs/).
+
+<!-- TOC -->
 
 - [Features](#features)
 - [Quick Start](#quick-start)
@@ -8,7 +17,8 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
   - [Manual Steps](#manual-steps)
 - [Daily Usage](#daily-usage)
   - [Update dotfiles](#update-dotfiles)
-  - [Update plugins](#update-plugins)
+  - [Update Sheldon plugins](#update-sheldon-plugins)
+  - [Add custom aliases](#add-custom-aliases)
   - [Edit Brewfile](#edit-brewfile)
 - [Key Components](#key-components)
   - [Sheldon Plugins](#sheldon-plugins)
@@ -18,10 +28,11 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
   - [Shell doesn't recognize commands](#shell-doesnt-recognize-commands)
   - [Plugins not loading](#plugins-not-loading)
   - [chezmoi not applying changes](#chezmoi-not-applying-changes)
+- [Misc](#misc)
 
 ## Features
 
-- **Fast**: Sheldon-based plugin management with only 5 core plugins
+- **Fast**: Sheldon-based plugin management
 - **Modern**: Starship prompt, lazy.nvim, and latest CLI tools
 - **Automated**: One-command setup for new machines
 
@@ -75,10 +86,24 @@ chezmoi diff
 chezmoi apply
 ```
 
-### Update plugins
+### Update Sheldon plugins
 
 > [!NOTE]
 > Sheldon plugins are automatically updated when `plugins.toml` changes via `run_onchange` script.
+
+### Add custom aliases
+
+Custom aliases are organized in separate files for maintainability:
+
+```bash
+# Edit or create a new alias file
+chezmoi edit ~/.config/zsh/aliases/brew.zsh
+
+# Apply changes
+chezmoi apply
+```
+
+All `*.zsh` files in `~/.config/zsh/aliases/` are automatically loaded by `.zshrc`.
 
 ### Edit Brewfile
 
@@ -92,11 +117,6 @@ vim Brewfile
 
 # Install/update packages
 brew bundle --file=~/.local/share/chezmoi/Brewfile
-
-# Or use chezmoi shortcut
-chezmoi cd
-vim Brewfile
-brew bundle
 ```
 
 ## Key Components
@@ -159,3 +179,7 @@ chezmoi diff
 # Force apply
 chezmoi apply --force
 ```
+
+## Misc
+
+This repository is [Commitizen](https://commitizen.github.io/cz-cli/) friendly, following [GitHub flow](https://docs.github.com/en/get-started/quickstart/github-flow).

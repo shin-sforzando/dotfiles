@@ -13,25 +13,36 @@ if [[ ! -d $PERSONAL_COMP_DIR ]]; then
 fi
 export FPATH="$PERSONAL_COMP_DIR:$FPATH"
 
-# Load plugins via Sheldon
+## Load plugins via Sheldon
+#
 eval "$(sheldon source)"
 
-# Sheldon completion
+## Sheldon completion
+#
 if (( $+commands[sheldon] )); then
   sheldon completions --shell zsh >| $PERSONAL_COMP_DIR/_sheldon
 fi
 
-# Enable completions
+## Enable completions
+#
 autoload -Uz compinit && compinit
 
 ## Personal bin directory
-#
 #
 PERSONAL_BIN_DIR="$HOME/.local/bin"
 if [[ ! -d $PERSONAL_BIN_DIR ]]; then
   mkdir -p $PERSONAL_BIN_DIR
 fi
 export PATH="$PERSONAL_BIN_DIR:$PATH"
+
+## Load custom aliases
+#
+if [[ -d $HOME/.config/zsh/aliases ]]; then
+  for alias_file in $HOME/.config/zsh/aliases/*.zsh; do
+    source "$alias_file"
+  done
+  unset alias_file
+fi
 
 ## cURL
 #
