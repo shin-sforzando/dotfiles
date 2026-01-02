@@ -44,6 +44,21 @@ if [[ -x /opt/homebrew/opt/curl/bin ]]; then
   export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 fi
 
+## OpenSSL
+#
+# For Intel
+if [ -x /usr/local/opt/openssl/bin/openssl ]; then
+  export PATH=/usr/local/opt/openssl/bin:$PATH
+  export LDFLAGS="-L/usr/local/opt/openssl/lib"
+  export CPPFLAGS="-I/usr/local/opt/openssl/include"
+fi
+# For M1
+if [ -x /opt/homebrew/opt/openssl/bin/openssl ]; then
+  export PATH=/opt/homebrew/opt/openssl/bin:$PATH
+  export LDFLAGS="-L/opt/homebrew/opt/openssl/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/openssl/include"
+fi
+
 ## Delete Disused Files
 #
 alias ddf="find . \( -name '.DS_Store' -o -name '._*' -o -name '.apdisk' -o -name 'Thumbs.db' -o -name 'Desktop.ini' \) -delete -print"
@@ -64,7 +79,7 @@ alias -g pbc="| tee >(pbcopy)"
 
 ## eza: Modern, maintained replacement for ls
 #
-if which eza >/dev/null; then
+if (($ + commands[eza])); then
   alias ls="eza -hF --icons"
   alias l="eza -haF --icons"
   alias la="eza -haF --icons"
@@ -88,7 +103,7 @@ fi
 
 ## fzf
 #
-if which fzf >/dev/null; then
+if (($ + commands[fzf])); then
   # source $HOME/.fzf.zsh
   source <(fzf --zsh)
 
@@ -119,46 +134,45 @@ fi
 
 ## bat: https://github.com/sharkdp/bat
 #
-if which bat >/dev/null; then
+if (($ + commands[bat])); then
   alias cat="bat"
 fi
 
 ## ov: https://github.com/noborus/ov
 #
-if which ov >/dev/null; then
+if (($ + commands[ov])); then
   export PAGER="ov"
   export MANPAGER="ov"
   export BAT_PAGER="ov -F -H3"
   eval $(ov --completion zsh)
 fi
 
-
 ## ripgrep: https://github.com/BurntSushi/ripgrep
 #
-if which rg >/dev/null; then
+if (($ + commands[rg])); then
   alias rgn="rg --no-ignore"
 fi
 
 ## ugrep: https://github.com/Genivia/ugrep
 #
-if which ug >/dev/null; then
-  alias uq="ug -Q"          # short & quick query TUI (interactive, uses .ugrep config)
-  alias ux="ug -UX"         # short & quick binary pattern search (uses .ugrep config)
-  alias uz="ug -z"          # short & quick compressed files and archives search (uses .ugrep config)
+if (($ + commands[ug])); then
+  alias uq="ug -Q"  # short & quick query TUI (interactive, uses .ugrep config)
+  alias ux="ug -UX" # short & quick binary pattern search (uses .ugrep config)
+  alias uz="ug -z"  # short & quick compressed files and archives search (uses .ugrep config)
 
-  alias ugit="ug -R --ignore-files"  # works like git-grep & define your preferences in .ugrep config
+  alias ugit="ug -R --ignore-files" # works like git-grep & define your preferences in .ugrep config
 
-  alias grep="ugrep -G"     # search with basic regular expressions (BRE)
-  alias egrep="ugrep -E"    # search with extended regular expressions (ERE)
-  alias fgrep="ugrep -F"    # find string(s)
-  alias pgrep="ugrep -P"    # search with Perl regular expressions
-  alias xgrep="ugrep -W"    # search (ERE) and output text or hex for binary
+  alias grep="ugrep -G"  # search with basic regular expressions (BRE)
+  alias egrep="ugrep -E" # search with extended regular expressions (ERE)
+  alias fgrep="ugrep -F" # find string(s)
+  alias pgrep="ugrep -P" # search with Perl regular expressions
+  alias xgrep="ugrep -W" # search (ERE) and output text or hex for binary
 
-  alias zgrep="ugrep -zG"   # search compressed files and archives with BRE
-  alias zegrep="ugrep -zE"  # search compressed files and archives with ERE
-  alias zfgrep="ugrep -zF"  # find string(s) in compressed files and/or archives
-  alias zpgrep="ugrep -zP"  # search compressed files and archives with Perl regular expressions
-  alias zxgrep="ugrep -zW"  # search (ERE) compressed files/archives and output text or hex for binary
+  alias zgrep="ugrep -zG"  # search compressed files and archives with BRE
+  alias zegrep="ugrep -zE" # search compressed files and archives with ERE
+  alias zfgrep="ugrep -zF" # find string(s) in compressed files and/or archives
+  alias zpgrep="ugrep -zP" # search compressed files and archives with Perl regular expressions
+  alias zxgrep="ugrep -zW" # search (ERE) compressed files/archives and output text or hex for binary
 fi
 
 ## OpenJDK
@@ -168,67 +182,68 @@ fi
 
 ## navi: https://github.com/denisidoro/navi
 #
-if which navi >/dev/null; then
+if (($ + commands[navi])); then
   # Installing navi shell widget as Ctrl+G
   eval "$(navi widget zsh)"
 fi
 
 ## ngrok: https://ngrok.com/
 #
-if which ngrok >/dev/null; then
+if (($ + commands[ngrok])); then
   eval "$(ngrok completion)"
 fi
 
 ## direnv: https://github.com/direnv/direnv
 #
-if which direnv >/dev/null; then
+if (($ + commands[direnv])); then
   eval "$(direnv hook zsh)"
 fi
 
 ## 1Password
 #
-if which op >/dev/null; then
-  eval "$(op completion zsh)"; compdef _op op
+if (($ + commands[op])); then
+  eval "$(op completion zsh)"
+  compdef _op op
 fi
 
 ## go-Task
 #
-if which task >/dev/null; then
+if (($ + commands[task])); then
   eval "$(task --completion zsh)"
 fi
 
 ## tenv
 #
-if which tenv >/dev/null; then
-  tenv completion zsh >| ~/.tenv.completion.zsh
+if (($ + commands[tenv])); then
+  tenv completion zsh >|~/.tenv.completion.zsh
   source "$HOME/.tenv.completion.zsh"
   export TENV_AUTO_INSTALL=true
 fi
 
 ## Terraform
 #
-if which terraform >/dev/null; then
+if (($ + commands[terraform])); then
   autoload -U +X bashcompinit && bashcompinit
   TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
 fi
 
 ## Google Cloud SDK
 #
-if (( $+commands[gcloud] )); then
+if (($ + commands[gcloud])); then
   local gcloud_completion="/opt/homebrew/share/zsh/site-functions/_google_cloud_sdk"
   [[ -f $gcloud_completion ]] && source $gcloud_completion
 fi
 
 ## AWS CLI
 #
-if which aws >/dev/null; then
+if (($ + commands[aws])); then
   autoload bashcompinit && bashcompinit
-  complete -C $(which aws_completer) aws
+  complete -C $commands[aws_completer] aws
 fi
 
 ## thefuck
 #
-if which thefuck >/dev/null; then
+if (($ + commands[thefuck])); then
   eval $(thefuck --alias)
 fi
 
@@ -240,14 +255,14 @@ fi
 
 ## Go
 #
-if which go >/dev/null; then
+if (($ + commands[go])); then
   export GOPATH="$HOME/go"
   export PATH="$PATH:$GOPATH/bin"
 fi
 
 ## GitHub Copilot CLI
 #
-if which github-copilot-cli >/dev/null; then
+if (($ + commands[github - copilot - cli])); then
   eval "$(github-copilot-cli alias -- "$0")"
 fi
 
@@ -258,7 +273,7 @@ export GIT_EDITOR=nvim
 
 ## gh: GitHub CLI
 #
-if which gh >/dev/null; then
+if (($ + commands[gh])); then
   eval "$(gh completion -s zsh)"
   gh alias set rl 'repo list' >/dev/null 2>&1
   gh alias set rv 'repo view --web' >/dev/null 2>&1
@@ -274,14 +289,14 @@ fi
 
 ## ghq
 #
-if which ghq >/dev/null; then
+if (($ + commands[ghq])); then
   alias repos="ghq list | fzf --preview 'bat --color=always --style=header,grid --line-range :80 $(ghq root)/{}/README.*'"
   alias repo='cd $(ghq root)/$(repos)'
 fi
 
 ## wt: Git worktree manager
 #
-if which wt >/dev/null; then
+if (($ + commands[wt])); then
   alias wtcd='cd $(wt)'
   alias wtrm='wt remove'
   alias wtclaude='cd $(wt) && claude'
@@ -294,7 +309,7 @@ compdef mosh=ssh
 
 ## SSH w/ Yubikey
 #
-if which gpgconf >/dev/null; then
+if (($ + commands[gpgconf])); then
   gpgconf --kill all
   export GPG_TTY="$(tty)"
   export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
@@ -317,7 +332,7 @@ decrypt() {
 
 ## NeoVim
 #
-if which nvim >/dev/null; then
+if (($ + commands[nvim])); then
   alias vi="nvim"
   alias vim="nvim"
   export XDG_CONFIG_HOME="$HOME/.config"
@@ -331,12 +346,12 @@ export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
 ## Volta
 #
-if which volta >/dev/null; then
+if (($ + commands[volta])); then
   export VOLTA_HOME="$HOME/.volta"
   export PATH="$VOLTA_HOME/bin:$PATH"
   volta completions --force --quiet zsh -o $PERSONAL_COMP_DIR/_volta
 
-  if which node >/dev/null; then
+  if (($ + commands[node])); then
     volta setup --quiet
   fi
 fi
@@ -350,42 +365,33 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 ## Visual Studio Code
 #
-if which code >/dev/null; then
+if (($ + commands[code])); then
   export EDITOR="code"
 fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
 ## fpp: Facebook PathPicker
 #
-if which fpp >/dev/null; then
+if (($ + commands[fpp])); then
   export FPP_EDITOR="code"
 fi
 
 ## zoxide: Smarter cd command
 #
-if which zoxide >/dev/null; then
+if (($ + commands[zoxide])); then
   eval "$(zoxide init zsh --cmd cd)"
-fi
-
-## OpenSSL
-#
-# For Intel
-if [ -x /usr/local/opt/openssl/bin/openssl ]; then
-  export PATH=/usr/local/opt/openssl/bin:$PATH
-  export LDFLAGS="-L/usr/local/opt/openssl/lib"
-  export CPPFLAGS="-I/usr/local/opt/openssl/include"
-fi
-# For M1
-if [ -x /opt/homebrew/opt/openssl/bin/openssl ]; then
-  export PATH=/opt/homebrew/opt/openssl/bin:$PATH
-  export LDFLAGS="-L/opt/homebrew/opt/openssl/lib"
-  export CPPFLAGS="-I/opt/homebrew/opt/openssl/include"
 fi
 
 ## translate-shell
 #
-if which trans >/dev/null; then
+if (($ + commands[trans])); then
   alias -g trj="| trans :ja"
+fi
+
+## Starship Prompt
+# See: https://starship.rs
+if (($ + commands[starship])); then
+  eval "$(starship init zsh)"
 fi
 
 ## Ghostty Shell Integration

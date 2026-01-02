@@ -178,6 +178,12 @@ brew "rsync"
 # sd - s[earch] & d[isplace] like sed
 brew "sd"
 
+# Fast Zsh plugin manager
+brew "sheldon"
+
+# Cross-shell prompt for astronauts
+brew "starship"
+
 # Modern Task runner written in Go
 brew "go-task"
 
