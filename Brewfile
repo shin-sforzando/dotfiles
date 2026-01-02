@@ -145,9 +145,6 @@ brew "ncdu"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
 
-# Fast, beautiful network discovery tool with both terminal and web interfaces.
-brew "netventory"
-
 # Network Kanji code conversion Filter (NKF)
 brew "nkf"
 
@@ -180,6 +177,9 @@ brew "sd"
 
 # Fast Zsh plugin manager
 brew "sheldon"
+
+# Shell script formatter
+brew "shfmt"
 
 # Cross-shell prompt for astronauts
 brew "starship"
@@ -239,37 +239,94 @@ brew "zoxide"
 brew "zsh"
 
 ## Install Cask Packages
+# Password manager
 cask "1password"
 cask "1password-cli"
+
+# Uninstaller for Mac applications
 cask "appcleaner"
+
+# AI-powered voice assistant
 cask "aqua-voice"
+
+# AI assistant desktop app
 cask "claude"
 cask "claude-code"
+
+# Application containers platform
 cask "docker", greedy: true
+
+# AI-powered translator
 cask "deepl"
+
+# Cloud storage and file synchronization
 cask "dropbox"
+
+# Note-taking and organization app
 cask "evernote"
+
+# Japanese fonts
 cask "font-genshingothic"
 cask "font-hackgen-nerd"
 cask "font-mononoki-nerd-font"
+
+# Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+
+# Web browser
 cask "google-chrome"
+
+# GPG Suite without Mail plugin
 cask "gpg-suite-no-mail"
+
+# Image optimization tool
 cask "imageoptim"
+
+# Zip archiver for Windows compatibility
 cask "macwinzipper"
+
+# Network discovery tool
+cask "netventory"
+
+# Markdown-based knowledge base
 cask "obsidian"
+
+# Launcher and productivity tool
 cask "raycast"
+
+# Inspect macOS installer packages
 cask "suspicious-package"
+
+# Database management tool
 cask "tableplus"
+
+# Mesh VPN and secure network
 cask "tailscale"
+
+# File transfer client
 cask "transmit"
+
+# Code editor
 cask "visual-studio-code"
+
+# Web browser
 cask "vivaldi"
+
+# Free and open source multimedia player
 cask "vlc"
+
+# Multi-account browser workspace
 cask "wavebox"
+
+# YubiKey management tool
 cask "yubico-yubikey-manager"
 
 ## Install App Store Packages
+# Quick preview for images and files
 mas "iPreview", id: 1519213509
+
+# Package tracking app
 mas "Deliveries", id: 290986013
+
+# Text actions and productivity tool
 mas "PopClip", id: 445189367

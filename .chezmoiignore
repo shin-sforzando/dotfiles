@@ -26,3 +26,7 @@
 
 # Local-only files
 .DS_Store
+
+# Brewfile stays in chezmoi source directory only
+# Avoid accidental edits in HOME directory
+Brewfile

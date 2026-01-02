@@ -38,7 +38,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <your-github-username>
 This will:
 
 1. Install chezmoi
-2. Clone this repository
+2. Clone this repository to `~/.local/share/chezmoi/`
 3. Install Homebrew (if needed)
 4. Install all packages from Brewfile
 5. Set up Rust, Node.js, and other tools
@@ -73,6 +73,24 @@ chezmoi diff
 chezmoi apply
 ```
 
+### Edit Brewfile
+
+**Important:** `Brewfile` is NOT copied to `~/` to avoid accidental edits. It only exists in the chezmoi source directory.
+
+```bash
+# Edit Brewfile
+cd ~/.local/share/chezmoi
+vim Brewfile
+
+# Install/update packages
+brew bundle --file=~/.local/share/chezmoi/Brewfile
+
+# Or use chezmoi shortcut
+chezmoi cd
+vim Brewfile
+brew bundle
+```
+
 ### Commit and push
 
 ```bash
@@ -105,7 +123,7 @@ brew update && brew upgrade
 ├── dot_gitconfig               # ~/.gitconfig
 ├── dot_gitignore               # ~/.gitignore
 ├── dot_czrc                    # ~/.czrc (commitizen config)
-├── Brewfile                    # Homebrew packages
+├── Brewfile                    # Homebrew packages (NOT copied to ~/, edit here only)
 ├── private_dot_config/         # ~/.config/
 │   ├── sheldon/plugins.toml    # Zsh plugin definitions
 │   ├── ghostty/config          # Ghostty terminal config

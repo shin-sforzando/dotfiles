@@ -10,9 +10,11 @@ if ! command -v brew &>/dev/null; then
 fi
 
 # Install packages from Brewfile
-if [ -f "$HOME/Brewfile" ]; then
+# Use CHEZMOI_SOURCE_DIR since dotfiles haven't been applied yet
+BREWFILE="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}/Brewfile"
+if [ -f "$BREWFILE" ]; then
   echo "📦 Installing Homebrew packages..."
-  brew bundle --file="$HOME/Brewfile"
+  brew bundle --file="$BREWFILE"
 fi
 
 # Rust: Install cargo-update
