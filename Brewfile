@@ -1,5 +1,4 @@
 ## Add Homebrew tap
-tap "homebrew/core"
 tap "ramborogers/netventory"
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 
@@ -291,6 +290,9 @@ cask "netventory"
 # Markdown-based knowledge base
 cask "obsidian"
 
+# Text actions and productivity tool
+cask "popclip"
+
 # Launcher and productivity tool
 cask "raycast"
 
@@ -300,8 +302,8 @@ cask "suspicious-package"
 # Database management tool
 cask "tableplus"
 
-# Mesh VPN and secure network
-cask "tailscale"
+# # Mesh VPN and secure network
+# cask "tailscale"
 
 # File transfer client
 cask "transmit"
@@ -327,6 +329,3 @@ mas "iPreview", id: 1519213509
 
 # Package tracking app
 mas "Deliveries", id: 290986013
-
-# Text actions and productivity tool
-mas "PopClip", id: 445189367

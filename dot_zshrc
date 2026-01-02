@@ -79,7 +79,7 @@ alias -g pbc="| tee >(pbcopy)"
 
 ## eza: Modern, maintained replacement for ls
 #
-if (($ + commands[eza])); then
+if (( $+commands[eza] )); then
   alias ls="eza -hF --icons"
   alias l="eza -haF --icons"
   alias la="eza -haF --icons"
@@ -103,7 +103,7 @@ fi
 
 ## fzf
 #
-if (($ + commands[fzf])); then
+if (( $+commands[fzf] )); then
   # source $HOME/.fzf.zsh
   source <(fzf --zsh)
 
@@ -134,13 +134,13 @@ fi
 
 ## bat: https://github.com/sharkdp/bat
 #
-if (($ + commands[bat])); then
+if (( $+commands[bat] )); then
   alias cat="bat"
 fi
 
 ## ov: https://github.com/noborus/ov
 #
-if (($ + commands[ov])); then
+if (( $+commands[ov] )); then
   export PAGER="ov"
   export MANPAGER="ov"
   export BAT_PAGER="ov -F -H3"
@@ -149,13 +149,13 @@ fi
 
 ## ripgrep: https://github.com/BurntSushi/ripgrep
 #
-if (($ + commands[rg])); then
+if (( $+commands[rg] )); then
   alias rgn="rg --no-ignore"
 fi
 
 ## ugrep: https://github.com/Genivia/ugrep
 #
-if (($ + commands[ug])); then
+if (( $+commands[ug] )); then
   alias uq="ug -Q"  # short & quick query TUI (interactive, uses .ugrep config)
   alias ux="ug -UX" # short & quick binary pattern search (uses .ugrep config)
   alias uz="ug -z"  # short & quick compressed files and archives search (uses .ugrep config)
@@ -182,39 +182,45 @@ fi
 
 ## navi: https://github.com/denisidoro/navi
 #
-if (($ + commands[navi])); then
+if (( $+commands[navi] )); then
   # Installing navi shell widget as Ctrl+G
   eval "$(navi widget zsh)"
 fi
 
 ## ngrok: https://ngrok.com/
 #
-if (($ + commands[ngrok])); then
+if (( $+commands[ngrok] )); then
   eval "$(ngrok completion)"
 fi
 
 ## direnv: https://github.com/direnv/direnv
 #
-if (($ + commands[direnv])); then
+if (( $+commands[direnv] )); then
   eval "$(direnv hook zsh)"
+fi
+
+## chezmoi: https://www.chezmoi.io
+#
+if (( $+commands[chezmoi] )); then
+  eval "$(chezmoi completion zsh)"
 fi
 
 ## 1Password
 #
-if (($ + commands[op])); then
+if (( $+commands[op] )); then
   eval "$(op completion zsh)"
   compdef _op op
 fi
 
 ## go-Task
 #
-if (($ + commands[task])); then
+if (( $+commands[task] )); then
   eval "$(task --completion zsh)"
 fi
 
 ## tenv
 #
-if (($ + commands[tenv])); then
+if (( $+commands[tenv] )); then
   tenv completion zsh >|~/.tenv.completion.zsh
   source "$HOME/.tenv.completion.zsh"
   export TENV_AUTO_INSTALL=true
@@ -222,28 +228,28 @@ fi
 
 ## Terraform
 #
-if (($ + commands[terraform])); then
+if (( $+commands[terraform] )); then
   autoload -U +X bashcompinit && bashcompinit
   TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
 fi
 
 ## Google Cloud SDK
 #
-if (($ + commands[gcloud])); then
+if (( $+commands[gcloud] )); then
   local gcloud_completion="/opt/homebrew/share/zsh/site-functions/_google_cloud_sdk"
   [[ -f $gcloud_completion ]] && source $gcloud_completion
 fi
 
 ## AWS CLI
 #
-if (($ + commands[aws])); then
+if (( $+commands[aws] )); then
   autoload bashcompinit && bashcompinit
   complete -C $commands[aws_completer] aws
 fi
 
 ## thefuck
 #
-if (($ + commands[thefuck])); then
+if (( $+commands[thefuck] )); then
   eval $(thefuck --alias)
 fi
 
@@ -255,25 +261,26 @@ fi
 
 ## Go
 #
-if (($ + commands[go])); then
+if (( $+commands[go] )); then
   export GOPATH="$HOME/go"
   export PATH="$PATH:$GOPATH/bin"
 fi
 
 ## GitHub Copilot CLI
 #
-if (($ + commands[github - copilot - cli])); then
+if (( $+commands[github - copilot - cli] )); then
   eval "$(github-copilot-cli alias -- "$0")"
 fi
 
 ## Git
 #
+alias g="git"
 compdef g=git
 export GIT_EDITOR=nvim
 
 ## gh: GitHub CLI
 #
-if (($ + commands[gh])); then
+if (( $+commands[gh] )); then
   eval "$(gh completion -s zsh)"
   gh alias set rl 'repo list' >/dev/null 2>&1
   gh alias set rv 'repo view --web' >/dev/null 2>&1
@@ -289,14 +296,14 @@ fi
 
 ## ghq
 #
-if (($ + commands[ghq])); then
+if (( $+commands[ghq] )); then
   alias repos="ghq list | fzf --preview 'bat --color=always --style=header,grid --line-range :80 $(ghq root)/{}/README.*'"
   alias repo='cd $(ghq root)/$(repos)'
 fi
 
 ## wt: Git worktree manager
 #
-if (($ + commands[wt])); then
+if (( $+commands[wt] )); then
   alias wtcd='cd $(wt)'
   alias wtrm='wt remove'
   alias wtclaude='cd $(wt) && claude'
@@ -309,7 +316,7 @@ compdef mosh=ssh
 
 ## SSH w/ Yubikey
 #
-if (($ + commands[gpgconf])); then
+if (( $+commands[gpgconf] )); then
   gpgconf --kill all
   export GPG_TTY="$(tty)"
   export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
@@ -332,7 +339,7 @@ decrypt() {
 
 ## NeoVim
 #
-if (($ + commands[nvim])); then
+if (( $+commands[nvim] )); then
   alias vi="nvim"
   alias vim="nvim"
   export XDG_CONFIG_HOME="$HOME/.config"
@@ -346,12 +353,12 @@ export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
 ## Volta
 #
-if (($ + commands[volta])); then
+if (( $+commands[volta] )); then
   export VOLTA_HOME="$HOME/.volta"
   export PATH="$VOLTA_HOME/bin:$PATH"
   volta completions --force --quiet zsh -o $PERSONAL_COMP_DIR/_volta
 
-  if (($ + commands[node])); then
+  if (( $+commands[node] )); then
     volta setup --quiet
   fi
 fi
@@ -365,32 +372,32 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 ## Visual Studio Code
 #
-if (($ + commands[code])); then
+if (( $+commands[code] )); then
   export EDITOR="code"
 fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
 ## fpp: Facebook PathPicker
 #
-if (($ + commands[fpp])); then
+if (( $+commands[fpp] )); then
   export FPP_EDITOR="code"
 fi
 
 ## zoxide: Smarter cd command
 #
-if (($ + commands[zoxide])); then
+if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh --cmd cd)"
 fi
 
 ## translate-shell
 #
-if (($ + commands[trans])); then
+if (( $+commands[trans] )); then
   alias -g trj="| trans :ja"
 fi
 
 ## Starship Prompt
 # See: https://starship.rs
-if (($ + commands[starship])); then
+if (( $+commands[starship] )); then
   eval "$(starship init zsh)"
 fi
 

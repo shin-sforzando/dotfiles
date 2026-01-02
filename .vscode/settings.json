@@ -86,6 +86,7 @@
         "openpgp",
         "osxkeychain",
         "pandoc",
+        "popclip",
         "procs",
         "Psql",
         "pueue",
