@@ -7,7 +7,7 @@
 
 <!-- Synopsis -->
 
-Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sheldon.cli.rs/).
+My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sheldon.cli.rs/).
 
 <!-- TOC -->
 
@@ -28,6 +28,7 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
   - [Shell doesn't recognize commands](#shell-doesnt-recognize-commands)
   - [Plugins not loading](#plugins-not-loading)
   - [chezmoi not applying changes](#chezmoi-not-applying-changes)
+- [References](#references)
 - [Misc](#misc)
 
 ## Features
@@ -179,6 +180,14 @@ chezmoi diff
 # Force apply
 chezmoi apply --force
 ```
+
+## References
+
+- [chezmoi](https://www.chezmoi.io)
+- [Sheldon](https://sheldon.cli.rs)
+- [Starship](https://starship.rs)
+- [lazy.nvim](https://lazy.folke.io)
+- [topgrade](https://github.com/topgrade-rs/topgrade)
 
 ## Misc
 
