@@ -8,10 +8,8 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
   - [Manual Steps](#manual-steps)
 - [Daily Usage](#daily-usage)
   - [Update dotfiles](#update-dotfiles)
-  - [Edit Brewfile](#edit-brewfile)
-  - [Commit and push](#commit-and-push)
   - [Update plugins](#update-plugins)
-- [Structure](#structure)
+  - [Edit Brewfile](#edit-brewfile)
 - [Key Components](#key-components)
   - [Sheldon Plugins](#sheldon-plugins)
   - [Starship Prompt](#starship-prompt)
@@ -23,7 +21,7 @@ Modern dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https:
 
 ## Features
 
-- **Fast**: Sheldon-based plugin management with only 4 core plugins
+- **Fast**: Sheldon-based plugin management with only 5 core plugins
 - **Modern**: Starship prompt, lazy.nvim, and latest CLI tools
 - **Automated**: One-command setup for new machines
 
@@ -63,6 +61,9 @@ gpg --edit-key KEYID
 
 ### Update dotfiles
 
+> [!NOTE]
+> Auto-commit and auto-push are enabled. Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
+
 ```bash
 # Edit a file
 chezmoi edit ~/.zshrc
@@ -73,6 +74,11 @@ chezmoi diff
 # Apply changes
 chezmoi apply
 ```
+
+### Update plugins
+
+> [!NOTE]
+> Sheldon plugins are automatically updated when `plugins.toml` changes via `run_onchange` script.
 
 ### Edit Brewfile
 
@@ -93,66 +99,16 @@ vim Brewfile
 brew bundle
 ```
 
-### Commit and push
-
-> [!NOTE]
-> Auto-commit and auto-push are enabled. Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
-
-If you manually edit files in the source directory, commit manually:
-
-```bash
-cd ~/.local/share/chezmoi
-git add .
-git commit -m "Update zsh config"
-git push
-```
-
-### Update plugins
-
-```bash
-# Update Sheldon plugins
-sheldon lock --update
-
-# Update Homebrew packages
-brew update && brew upgrade
-```
-
-## Structure
-
-```plain
-~/.local/share/chezmoi/
-├── .chezmoiignore              # Files to exclude from sync
-├── .chezmoiscripts/            # Automated setup scripts
-│   └── run_once_before_install-packages.sh
-├── dot_zshrc                   # ~/.zshrc
-├── dot_zshenv                  # ~/.zshenv
-├── dot_zprofile                # ~/.zprofile
-├── dot_gitconfig               # ~/.gitconfig
-├── dot_gitignore               # ~/.gitignore
-├── dot_czrc                    # ~/.czrc (commitizen config)
-├── Brewfile                    # Homebrew packages (NOT copied to ~/, edit here only)
-├── private_dot_config/         # ~/.config/
-│   ├── sheldon/plugins.toml    # Zsh plugin definitions
-│   ├── ghostty/config          # Ghostty terminal config
-│   ├── direnv/direnv.toml      # direnv config
-│   ├── ov/config.yaml          # ov pager config
-│   └── nvim/                   # Neovim config (lazy.nvim)
-├── private_dot_claude/         # ~/.claude/
-│   ├── settings.json           # Claude Code settings
-│   └── executable_notify.sh    # Completion notification script
-└── dot_local/bin/              # ~/.local/bin/
-    └── executable_wt           # Git worktree manager
-```
-
 ## Key Components
 
 ### Sheldon Plugins
 
-Only 4 essential plugins for fast startup:
+Only 5 essential plugins for fast startup:
 
 - `zsh-autosuggestions` - Fish-like autosuggestions
 - `zsh-completions` - Additional completion definitions
 - `zsh-history-substring-search` - History search (up/down arrows)
+- `zsh-you-should-use` - Reminds you to use existing aliases
 - `zsh-syntax-highlighting` - Fish-like syntax highlighting
 
 ### Starship Prompt
@@ -167,6 +123,10 @@ Minimal configuration using lazy.nvim:
 
 - Basic editor settings (line numbers, indentation, etc.)
 - Clipboard integration
+- Kanagawa color scheme
+- Telescope fuzzy finder (`<leader>ff` for files, `<leader>fg` for grep)
+- Treesitter for better syntax highlighting and indentation
+- Claude Code integration (`<leader>ac` to toggle, `<leader>as` to send selection)
 - Easy to extend with additional plugins
 
 ## Troubleshooting

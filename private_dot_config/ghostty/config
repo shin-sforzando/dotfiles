@@ -28,6 +28,11 @@ window-title-font-family = HackGen Console NF
 macos-titlebar-style = tabs
 macos-option-as-alt = true
 
+clipboard-read = allow
+clipboard-write = allow
+clipboard-trim-trailing-spaces = true
+copy-on-select = true
+
 # Disable automatic shell integration injection
 # We manually load it in .zshrc to ensure correct hook order
 shell-integration = none

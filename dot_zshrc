@@ -5,11 +5,6 @@
 # Start Profiling
 #zmodload zsh/zprof
 
-# Load plugins via Sheldon
-eval "$(sheldon source)"
-
-# Customize to your needs...
-
 ## Personal Zsh completions directory
 #
 PERSONAL_COMP_DIR="$HOME/.zsh_completions"
@@ -18,8 +13,13 @@ if [[ ! -d $PERSONAL_COMP_DIR ]]; then
 fi
 export FPATH="$PERSONAL_COMP_DIR:$FPATH"
 
-# Docker Desktop
-fpath=(/Users/suzuki/.docker/completions $fpath)
+# Load plugins via Sheldon
+eval "$(sheldon source)"
+
+# Sheldon completion
+if (( $+commands[sheldon] )); then
+  sheldon completions --shell zsh >| $PERSONAL_COMP_DIR/_sheldon
+fi
 
 # Enable completions
 autoload -Uz compinit && compinit
@@ -266,12 +266,6 @@ if (( $+commands[go] )); then
   export PATH="$PATH:$GOPATH/bin"
 fi
 
-## GitHub Copilot CLI
-#
-if (( $+commands[github - copilot - cli] )); then
-  eval "$(github-copilot-cli alias -- "$0")"
-fi
-
 ## Git
 #
 alias g="git"
@@ -343,8 +337,6 @@ if (( $+commands[nvim] )); then
   alias vi="nvim"
   alias vim="nvim"
   export XDG_CONFIG_HOME="$HOME/.config"
-else
-  alias vi="vim"
 fi
 
 ## Yarn
