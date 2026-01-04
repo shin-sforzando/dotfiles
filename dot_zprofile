@@ -15,10 +15,10 @@ fi
 #
 
 if [[ -z "$EDITOR" ]]; then
-  export EDITOR='nano'
+  export EDITOR='nvim'
 fi
 if [[ -z "$VISUAL" ]]; then
-  export VISUAL='nano'
+  export VISUAL='code'
 fi
 if [[ -z "$PAGER" ]]; then
   export PAGER='less'
@@ -29,28 +29,17 @@ fi
 #
 
 if [[ -z "$LANG" ]]; then
-  export LANG="en_US.UTF-8"
+  export LANG='en_US.UTF-8'
 fi
 
 #
 # Paths
 #
 
-# Ignore /etc/z*
-setopt no_global_rcs
-
-# All unquoted arguments of the form 'anything=expression' appearing after the command name have filename expansion (that is, where expression has a leading '~' or '=') performed on expression as if it were a parameter assignment.
-setopt magic_equal_subst
-
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Set the list of directories that cd searches.
-# cdpath=(
-#   $cdpath
-# )
-
-# Set the list of directories that Zsh searches for programs.
+# Set user bin directories and standard locations if they exist
 path=(
   $HOME/{,s}bin(N)
   /opt/{homebrew,local}/{,s}bin(N)
@@ -58,39 +47,7 @@ path=(
   $path
 )
 
-# Homebrew for M1
-if [[ -e /opt/homebrew/bin/brew ]];then
-  eval $(/opt/homebrew/bin/brew shellenv)
-fi
-
-# switch-arch
-if (( $+commands[sw_vers] )) && (( $+commands[arch] )); then
-	[[ -x /usr/local/bin/brew ]] && alias brew="arch -arch x86_64 /usr/local/bin/brew"
-	alias x64='exec arch -x86_64 /bin/zsh'
-	alias a64='exec arch -arm64e /bin/zsh'
-	switch-arch() {
-		if  [[ "$(uname -m)" == "arm64" ]]; then
-			arch=x86_64
-		elif [[ "$(uname -m)" == "x86_64" ]]; then
-			arch=arm64e
-		fi
-		exec arch -arch $arch /bin/zsh
-	}
-fi
-
-#
-# Less
-#
-
-# Set the default Less options.
-# Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
-# Remove -X to enable it.
-if [[ -z "$LESS" ]]; then
-  export LESS='-g -i -M -R -S -w -X -z-4'
-fi
-
-# Set the Less input preprocessor.
-# Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
-if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
-  export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
+# Homebrew
+if [[ -e /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi

@@ -15,6 +15,7 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 - [Quick Start](#quick-start)
   - [New Machine Setup](#new-machine-setup)
   - [Manual Steps](#manual-steps)
+- [Migration from Prezto](#migration-from-prezto)
 - [Daily Usage](#daily-usage)
   - [Update dotfiles](#update-dotfiles)
   - [Update Sheldon plugins](#update-sheldon-plugins)
@@ -68,6 +69,19 @@ gpg --keyserver hkps://keys.openpgp.org --search-keys shin@sforzando.co.jp
 gpg --edit-key KEYID
 > trust
 ```
+
+## Migration from Prezto
+
+If you're migrating from an existing [shin-sforzando/prezto](https://github.com/shin-sforzando/prezto) setup, please refer to the detailed migration guide:
+
+👉 **[MIGRATION.md](./MIGRATION.md)**
+
+The guide covers:
+
+- Step-by-step migration process
+- Important backup procedures
+- Common issues and solutions (.zprofile, history, etc.)
+- Rollback instructions if needed
 
 ## Daily Usage
 
