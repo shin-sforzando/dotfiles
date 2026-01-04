@@ -249,7 +249,7 @@ cask "claude"
 cask "claude-code"
 
 # Application containers platform
-cask "docker", greedy: true
+cask "docker-desktop"
 
 # AI-powered translator
 cask "deepl"
