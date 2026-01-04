@@ -79,12 +79,17 @@ format = '[@$hostname]($style)'
 disabled = false
 ssh_only = false
 style = "bg:red fg:crust"
-format = "[\\($localipv4\\)]($style)"
+format = "[\\($localipv4\\) ]($style)"
 
 [direnv]
 disabled = false
 style = "bg:sapphire fg:crust"
-format = "[$symbol$loaded/$allowed]($style)"
+format = "[ $symbol$loaded/$allowed ]($style)"
+loaded_msg = "✅"
+unloaded_msg = "❌"
+allowed_msg = "✅"
+not_allowed_msg = "❌"
+denied_msg = "⛔"
 
 [directory]
 style = "bg:peach fg:crust"
@@ -104,6 +109,8 @@ truncation_symbol = "…/"
 symbol = ""
 style = "bg:yellow"
 format = '[[ $symbol $branch ](fg:crust bg:yellow)]($style)'
+truncation_length = 16
+truncation_symbol = "…"
 
 [git_status]
 style = "bg:yellow"
