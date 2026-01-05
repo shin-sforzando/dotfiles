@@ -41,6 +41,7 @@ window-padding-x = 8
 window-padding-y = 8
 window-padding-balance = true
 window-save-state = always
+window-new-tab-position = end
 
 background-opacity = 0.75
 background-opacity-cells = true
