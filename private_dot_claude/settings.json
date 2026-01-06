@@ -9,6 +9,10 @@
     "explanatory-output-style@claude-plugins-official": true,
     "playwright@claude-plugins-official": true
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/context-bar.sh"
+  },
   "hooks": {
     "Stop": [
       {
