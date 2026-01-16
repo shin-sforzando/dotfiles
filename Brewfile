@@ -1,5 +1,6 @@
 ## Add Homebrew tap
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
+tap "satococoa/tap"
 
 ## Install Packages
 # Clone of cat(1) with syntax highlighting and Git integration
@@ -220,6 +221,9 @@ brew "watchexec"
 
 # Internet file retriever
 brew "wget"
+
+# Git worktree manager with automatic path generation and hooks
+brew "wtp"
 
 # Yubikey Manager
 brew "ykman"

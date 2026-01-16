@@ -326,13 +326,11 @@ if (( $+commands[ghq] )); then
   alias repo='cd $(ghq root)/$(repos)'
 fi
 
-## wt: Git worktree manager
+## wtp: Git worktree manager with automatic path generation
 #
-if (( $+commands[wt] )); then
-  alias wtcd='cd $(wt)'
-  alias wtrm='wt remove'
-  alias wtclaude='cd $(wt) && claude'
-  alias wtcode='code $(wt)'
+if (( $+commands[wtp] )); then
+  # Enable shell integration (completion and cd functionality)
+  eval "$(wtp shell-init zsh)"
 fi
 
 ## MObileSHell
