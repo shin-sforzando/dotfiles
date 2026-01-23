@@ -398,16 +398,22 @@ if (( $+commands[code] )); then
 fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
-## fpp: Facebook PathPicker
-#
-if (( $+commands[fpp] )); then
-  export FPP_EDITOR="code"
-fi
-
 ## zoxide: Smarter cd command
 #
 if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh --cmd cd)"
+fi
+
+## yazi: Terminal file manager
+#
+if (( $+commands[yazi] )); then
+  function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+    rm -f -- "$tmp"
+  }
 fi
 
 ## zellij: Terminal multiplexer

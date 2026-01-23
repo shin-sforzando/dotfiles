@@ -42,9 +42,6 @@ brew "fd"
 # Play, record, convert, and stream audio and video
 brew "ffmpeg"
 
-# Facebook PathPicker
-brew "fpp"
-
 # A command-line fuzzy finder
 brew "fzf"
 
@@ -92,6 +89,9 @@ brew "git-secrets"
 
 # Regular Expression generator
 brew "grex"
+
+# A post-modern modal text editor written in Rust
+brew "helix"
 
 # Simple hex viewer
 brew "hexyl"
@@ -224,6 +224,9 @@ brew "wget"
 
 # Git worktree manager with automatic path generation and hooks
 brew "wtp"
+
+# Blazing fast terminal file manager written in Rust
+brew "yazi"
 
 # Yubikey Manager
 brew "ykman"

@@ -1,0 +1,35 @@
+[mgr]
+show_hidden = true
+
+[opener]
+helix = [
+  { run = 'hx "$@"', block = true, desc = "Open in Helix" },
+]
+nvim = [
+  { run = 'nvim "$@"', block = true, desc = "Open in Neovim" },
+]
+code = [
+  { run = 'code "$@"', orphan = true, desc = "Open in VS Code" },
+]
+
+[open]
+prepend_rules = [
+  # Text files
+  { mime = "text/*", use = ["helix", "nvim", "code"] },
+
+  # Programming languages & configs
+  { mime = "application/json", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-yaml", use = ["helix", "nvim", "code"] },
+  { mime = "application/toml", use = ["helix", "nvim", "code"] },
+  { mime = "application/xml", use = ["helix", "nvim", "code"] },
+  { mime = "application/javascript", use = ["helix", "nvim", "code"] },
+  { mime = "application/typescript", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-python", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-ruby", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-php", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-perl", use = ["helix", "nvim", "code"] },
+  { mime = "application/x-shellscript", use = ["helix", "nvim", "code"] },
+
+  # Empty files
+  { mime = "inode/x-empty", use = ["helix", "nvim", "code"] },
+]

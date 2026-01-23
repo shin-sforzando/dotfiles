@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+# This script runs whenever package.toml changes
+# hash: {{ include "private_dot_config/yazi/package.toml" | sha256sum }}
+
+if ! command -v ya &> /dev/null; then
+  echo "ya command not found, skipping yazi package installation"
+  exit 0
+fi
+
+echo "Installing yazi packages from package.toml..."
+ya pkg install
+
+echo "Yazi packages installed successfully."

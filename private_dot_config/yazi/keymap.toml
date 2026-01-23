@@ -1,0 +1,5 @@
+[mgr]
+prepend_keymap = [
+  { on = "<Enter>", run = "open --interactive", desc = "Open with editor selection" },
+  { on = "o", run = "open --interactive", desc = "Open with editor selection" },
+]
