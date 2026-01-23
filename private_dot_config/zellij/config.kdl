@@ -1,5 +1,8 @@
 scroll_buffer_size 99999
-theme "kanagawa"
+
+web_client {
+    font "HackGen Console NF"
+}
 
 keybinds {
     session {
