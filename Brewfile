@@ -228,6 +228,9 @@ brew "wtp"
 # Yubikey Manager
 brew "ykman"
 
+# A workspace and terminal multiplexer
+brew "zellij"
+
 # In terminal graphical metrics for your *nix system written in Rust
 brew "zenith"
 

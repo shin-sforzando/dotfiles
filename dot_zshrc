@@ -410,6 +410,16 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh --cmd cd)"
 fi
 
+## zellij: Terminal multiplexer
+#
+if (( $+commands[zellij] )); then
+  alias zj='zellij'
+  alias zja='zellij attach'
+  alias zjl='zellij list-sessions'
+  alias zjk='zellij kill-session'
+  alias zjka='zellij kill-all-sessions'
+fi
+
 ## translate-shell
 #
 if (( $+commands[trans] )); then

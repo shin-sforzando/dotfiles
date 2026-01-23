@@ -52,5 +52,7 @@ split-divider-color = #cccccc
 window-inherit-working-directory = true
 quit-after-last-window-closed = true
 
+macos-option-as-alt = left
+
 # Newline for Coding Assistant
 keybind = shift+enter=text:\n

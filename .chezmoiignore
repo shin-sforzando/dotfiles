@@ -27,6 +27,11 @@
 # Local-only files
 .DS_Store
 
+# Repository documentation files (should NOT be synced to HOME)
+# These are documentation for the chezmoi repository itself
+MIGRATION.md
+README.md
+
 # Brewfile stays in chezmoi source directory only
 # Avoid accidental edits in HOME directory
 Brewfile
