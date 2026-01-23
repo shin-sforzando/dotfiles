@@ -1,0 +1,12 @@
+keybinds {
+    session {
+        // zsm: zoxide-integrated session switcher
+        bind "z" {
+            LaunchOrFocusPlugin "file:/Users/suzuki/.config/zellij/plugins/zsm.wasm" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+    }
+}
