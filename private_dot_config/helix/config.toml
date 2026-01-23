@@ -1,1 +1,15 @@
 theme = "kanagawa"
+
+[editor.statusline]
+left = ["mode", "spinner", "version-control", "file-absolute-path", "read-only-indicator", "file-modification-indicator"]
+center = ["file-type"]
+right = ["diagnostics", "workspace-diagnostics", "selections", "register", "position", "position-percentage", "total-line-numbers", "file-encoding", "file-line-ending"]
+separator = "│"
+mode.normal = "NORMAL"
+mode.insert = "INSERT"
+mode.select = "SELECT"
+diagnostics = ["warning", "error"]
+workspace-diagnostics = ["warning", "error"]
+
+[editor.soft-wrap]
+enable = true
