@@ -1,3 +1,6 @@
+scroll_buffer_size 99999
+theme "kanagawa"
+
 keybinds {
     session {
         // zsm: zoxide-integrated session switcher
