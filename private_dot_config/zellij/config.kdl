@@ -6,6 +6,14 @@ web_client {
 }
 
 keybinds {
+    shared_except "locked" {
+        bind "Alt f" {
+            LaunchPlugin "filepicker" {
+                close_on_selection true
+            };
+        }
+    }
+
     session {
         // zsm: zoxide-integrated session switcher
         bind "z" {

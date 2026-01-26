@@ -1,0 +1,53 @@
+layout {
+  cwd "~/"
+
+  default_tab_template {
+    // the default zellij tab-bar and status bar plugins
+    pane size=1 {
+      borderless true
+      plugin location="zellij:tab-bar"
+    }
+    children
+    pane size=2 {
+      borderless true
+      plugin location="zellij:status-bar"
+    }
+  }
+
+  tab name="Home" split_direction="horizontal" {
+    pane {
+      name "Claude Monitor"
+      command "claude-monitor"
+      args "--theme" "dark" "--timezone" "Asia/Tokyo" "--time-format" "24h" "--plan" "max20"
+    }
+    pane {
+      name "Sandbox"
+      focus true
+    }
+  }
+
+  tab name="Comic IP" cwd="~/Workspace/github.com/sforzando/comic-ip" split_direction="vertical" {
+    pane
+    pane
+  }
+
+  tab name="d-TagScope" cwd="~/Workspace/github.com/sforzando/d-TagScope" split_direction="vertical" {
+    pane
+    pane
+  }
+
+  tab name="IPX" cwd="~/Workspace/github.com/sforzando" split_direction="vertical" {
+    pane
+    pane
+  }
+
+  tab name="shuz-AI" cwd="~/Workspace/github.com/sforzando/shuz-ai" split_direction="vertical" {
+    pane
+    pane
+  }
+
+  tab name="FLYEARS" cwd="~/Workspace/github.com/sforzando/FLYEARS" split_direction="vertical" {
+    pane
+    pane
+  }
+}
