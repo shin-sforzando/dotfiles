@@ -2,6 +2,11 @@
 # Executes commands at the start of an interactive session.
 #
 
+# Fix TERM for terminals that don't advertise 256color properly (e.g. Termius over SSH)
+if [[ "$TERM" == "xterm" ]]; then
+  export TERM="xterm-256color"
+fi
+
 # Start Profiling
 #zmodload zsh/zprof
 
