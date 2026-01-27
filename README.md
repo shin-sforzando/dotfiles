@@ -34,16 +34,20 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 
 ## Features
 
+- **Cross-platform**: macOS (Apple Silicon) and MX Linux
 - **Fast**: Sheldon-based plugin management
 - **Modern**: Starship prompt, lazy.nvim, and latest CLI tools
-- **Automated**: One-command setup for new machines
+- **Automated**: One-command setup via Homebrew / Linuxbrew
 
 ## Quick Start
 
 ### New Machine Setup
 
 ```bash
-# Install chezmoi and apply dotfiles in one command
+# 1. Install Homebrew (macOS) or Linuxbrew (Linux)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Install chezmoi and apply dotfiles in one command
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply shin-sforzando
 ```
 
@@ -51,8 +55,8 @@ This will:
 
 1. Install chezmoi
 2. Clone this repository to `~/.local/share/chezmoi/`
-3. Install Homebrew (if needed)
-4. Install all packages from Brewfile
+3. Install Homebrew (macOS) or Linuxbrew (Linux)
+4. Install all packages from Brewfile (macOS-only packages are skipped on Linux via `OS.mac?`)
 5. Set up Rust, Node.js, and other tools
 6. Apply all dotfiles to your home directory
 
@@ -62,7 +66,10 @@ After automated setup, complete these manual steps:
 
 ```bash
 # 1. Set default shell
+# macOS:
 sudo chsh -s $(brew --prefix)/bin/zsh
+# Linux:
+chsh -s $(which zsh)
 
 # 2. Set up GPG key
 gpg --keyserver hkps://keys.openpgp.org --search-keys shin@sforzando.co.jp
@@ -124,6 +131,12 @@ All `*.zsh` files in `~/.config/zsh/aliases/` are automatically loaded by `.zshr
 
 > [!IMPORTANT]
 > `Brewfile` is NOT copied to `~/` to avoid accidental edits. It only exists in the chezmoi source directory.
+
+Brewfile is a Ruby DSL. Platform-specific packages are guarded by `OS.mac?` / `OS.linux?`:
+
+- **Common**: CLI tools shared across macOS and Linux (e.g. `bat`, `fzf`, `ripgrep`)
+- **`if OS.mac?`**: macOS-only formulae (`m-cli`, `mas`, `terminal-notifier`), casks, and App Store apps
+- **`if OS.linux?`**: Linux-only formulae (`libnotify`)
 
 ```bash
 # Edit Brewfile

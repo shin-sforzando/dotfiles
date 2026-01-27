@@ -3,7 +3,7 @@ set -eufo pipefail
 
 echo "📦 Installing packages..."
 
-# Homebrew installation check
+# Homebrew / Linuxbrew installation check
 if ! command -v brew &>/dev/null; then
   echo "🍺 Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -45,9 +45,11 @@ fi
 echo "📁 Creating Workspace directory..."
 mkdir -p "$HOME/Workspace"
 
+{{ if eq .chezmoi.os "darwin" -}}
 # .DS_Store on network drives
 echo "🗂️ Configuring .DS_Store settings..."
 defaults write com.apple.desktopservices DSDontWriteNetworkStores True 2>/dev/null || true
+{{ end -}}
 
 echo ""
 echo "🔐 Manual steps required:"
@@ -57,7 +59,11 @@ echo "     gpg --edit-key KEYID"
 echo "     > trust"
 echo ""
 echo "  2. Set default shell:"
+{{ if eq .chezmoi.os "darwin" -}}
 echo "     sudo chsh -s \$(brew --prefix)/bin/zsh"
+{{ else -}}
+echo "     chsh -s \$(which zsh)"
+{{ end -}}
 echo ""
 
 echo "✅ Package installation completed!"

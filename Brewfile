@@ -114,14 +114,8 @@ brew "less"
 # The Log File Navigator
 brew "lnav"
 
-# Swiss-army Knife for macOS
-brew "m-cli"
-
 # Slightly unconventional command-line interface for markdownlint
 brew "markdownlint-cli2"
-
-# Mac App Store CLI interface
-brew "mas"
 
 # CLI tool for saving complete web pages as a single HTML file
 brew "monolith"
@@ -183,9 +177,6 @@ brew "starship"
 # Modern Task runner written in Go
 brew "go-task"
 
-# Send macOS User Notifications from the CLI
-brew "terminal-notifier"
-
 # OCR (Optical Character Recognition) engine
 brew "tesseract"
 
@@ -243,92 +234,105 @@ brew "zoxide"
 # UNIX shell (command interpreter)
 brew "zsh"
 
-## Install Cask Packages
-# Password manager
-cask "1password"
-cask "1password-cli"
+## Linux only
+if OS.linux?
+  brew "libnotify"  # Desktop notifications via notify-send
+end
 
-# Uninstaller for Mac applications
-cask "appcleaner"
+## macOS only
+if OS.mac?
+  # macOS-specific formulae
+  brew "m-cli"              # Swiss-army Knife for macOS
+  brew "mas"                # Mac App Store CLI interface
+  brew "terminal-notifier"  # Send macOS User Notifications from the CLI
 
-# AI-powered voice assistant
-cask "aqua-voice"
+  ## Install Cask Packages
+  # Password manager
+  cask "1password"
+  cask "1password-cli"
 
-# AI assistant desktop app
-cask "claude"
-cask "claude-code"
+  # Uninstaller for Mac applications
+  cask "appcleaner"
 
-# Application containers platform
-cask "docker-desktop"
+  # AI-powered voice assistant
+  cask "aqua-voice"
 
-# AI-powered translator
-cask "deepl"
+  # AI assistant desktop app
+  cask "claude"
+  cask "claude-code"
 
-# Cloud storage and file synchronization
-cask "dropbox"
+  # Application containers platform
+  cask "docker-desktop"
 
-# Note-taking and organization app
-cask "evernote"
+  # AI-powered translator
+  cask "deepl"
 
-# Japanese fonts
-cask "font-genshingothic"
-cask "font-hackgen-nerd"
-cask "font-mononoki-nerd-font"
+  # Cloud storage and file synchronization
+  cask "dropbox"
 
-# Terminal emulator that uses platform-native UI and GPU acceleration
-cask "ghostty"
+  # Note-taking and organization app
+  cask "evernote"
 
-# Web browser
-cask "google-chrome"
+  # Japanese fonts
+  cask "font-genshingothic"
+  cask "font-hackgen-nerd"
+  cask "font-mononoki-nerd-font"
 
-# GPG Suite without Mail plugin
-cask "gpg-suite-no-mail"
+  # Terminal emulator that uses platform-native UI and GPU acceleration
+  cask "ghostty"
 
-# Image optimization tool
-cask "imageoptim"
+  # Web browser
+  cask "google-chrome"
 
-# Zip archiver for Windows compatibility
-cask "macwinzipper"
+  # GPG Suite without Mail plugin
+  cask "gpg-suite-no-mail"
 
-# Markdown-based knowledge base
-cask "obsidian"
+  # Image optimization tool
+  cask "imageoptim"
 
-# Text actions and productivity tool
-cask "popclip"
+  # Zip archiver for Windows compatibility
+  cask "macwinzipper"
 
-# Launcher and productivity tool
-cask "raycast"
+  # Markdown-based knowledge base
+  cask "obsidian"
 
-# Inspect macOS installer packages
-cask "suspicious-package"
+  # Text actions and productivity tool
+  cask "popclip"
 
-# Database management tool
-cask "tableplus"
+  # Launcher and productivity tool
+  cask "raycast"
 
-# # Mesh VPN and secure network
-# cask "tailscale"
+  # Inspect macOS installer packages
+  cask "suspicious-package"
 
-# File transfer client
-cask "transmit"
+  # Database management tool
+  cask "tableplus"
 
-# Code editor
-cask "visual-studio-code"
+  # # Mesh VPN and secure network
+  # cask "tailscale"
 
-# Web browser
-cask "vivaldi"
+  # File transfer client
+  cask "transmit"
 
-# Free and open source multimedia player
-cask "vlc"
+  # Code editor
+  cask "visual-studio-code"
 
-# Multi-account browser workspace
-cask "wavebox"
+  # Web browser
+  cask "vivaldi"
 
-# YubiKey management tool
-cask "yubico-authenticator"
+  # Free and open source multimedia player
+  cask "vlc"
 
-## Install App Store Packages
-# Quick preview for images and files
-mas "iPreview", id: 1519213509
+  # Multi-account browser workspace
+  cask "wavebox"
 
-# Package tracking app
-mas "Deliveries", id: 290986013
+  # YubiKey management tool
+  cask "yubico-authenticator"
+
+  ## Install App Store Packages
+  # Quick preview for images and files
+  mas "iPreview", id: 1519213509
+
+  # Package tracking app
+  mas "Deliveries", id: 290986013
+end

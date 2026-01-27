@@ -22,8 +22,8 @@
 
 ## 前提条件
 
-- macOS（Apple SiliconまたはIntel）
-- Homebrewがインストール済み
+- macOS（Apple Silicon） or MX Linux
+- Homebrew（macOS）またはLinuxbrew（Linux）がインストール済み
 - Gitが使用可能
 - インターネット接続
 
@@ -48,6 +48,9 @@ fi
 ## Stage 2: 必要なツールのインストール
 
 ```bash
+# Homebrew (macOS) / Linuxbrew (Linux) のインストール（未導入の場合）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
 # chezmoiのインストール
 brew install chezmoi
 
