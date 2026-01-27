@@ -49,5 +49,9 @@ path=(
 
 # Homebrew
 if [[ -e /opt/homebrew/bin/brew ]]; then
+  # macOS (Apple Silicon)
   eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -e /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  # Linux
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
