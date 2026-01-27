@@ -36,7 +36,7 @@ $cmd_duration\
 $line_break\
 $character"""
 
-palette = 'catppuccin_mocha'
+palette = 'catppuccin_mocha_256'
 
 [os]
 disabled = false
@@ -310,3 +310,32 @@ surface0 = "#363a4f"
 base = "#24273a"
 mantle = "#1e2030"
 crust = "#181926"
+
+[palettes.catppuccin_mocha_256]
+# 256-color approximation of catppuccin_mocha for terminals without truecolor (e.g. Termius)
+rosewater = "225"
+flamingo = "218"
+pink = "219"
+mauve = "141"
+red = "211"
+maroon = "217"
+peach = "216"
+yellow = "223"
+green = "151"
+teal = "158"
+sky = "117"
+sapphire = "117"
+blue = "111"
+lavender = "147"
+text = "255"
+subtext1 = "250"
+subtext0 = "248"
+overlay2 = "246"
+overlay1 = "243"
+overlay0 = "240"
+surface2 = "239"
+surface1 = "237"
+surface0 = "236"
+base = "235"
+mantle = "234"
+crust = "234"
