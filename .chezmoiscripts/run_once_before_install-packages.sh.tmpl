@@ -9,6 +9,11 @@ if ! command -v brew &>/dev/null; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
+# Pre-tap repositories (workaround for Linuxbrew tap ordering issue)
+echo "🔧 Adding Homebrew taps..."
+brew tap rhysd/hgrep https://github.com/rhysd/hgrep || true
+brew tap satococoa/tap || true
+
 # Install packages from Brewfile
 # Use CHEZMOI_SOURCE_DIR since dotfiles haven't been applied yet
 BREWFILE="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}/Brewfile"

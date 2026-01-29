@@ -1,0 +1,21 @@
+#!/bin/bash
+set -eufo pipefail
+
+echo "🔤 Installing Nerd Fonts (Mononoki, Noto)..."
+
+if command -v brew &>/dev/null; then
+  brew install --cask font-mononoki-nerd-font font-noto-nerd-font
+else
+  echo "❌ Homebrew not found. Please install Homebrew first."
+  exit 1
+fi
+
+{{ if ne .chezmoi.os "darwin" -}}
+# Linux: Refresh font cache
+if command -v fc-cache &>/dev/null; then
+  echo "🔄 Refreshing font cache..."
+  fc-cache -fv
+fi
+{{ end -}}
+
+echo "✅ Nerd Fonts installation completed!"
