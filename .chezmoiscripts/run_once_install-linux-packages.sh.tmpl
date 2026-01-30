@@ -1,4 +1,4 @@
-{{- if eq .chezmoi.osRelease.id "debian" -}}
+{{- if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "debian") -}}
 #!/bin/bash
 
 set -eufo pipefail
@@ -131,6 +131,64 @@ if ! command -v notify-send &>/dev/null; then
   echo "✅ libnotify installed"
 else
   echo "⏭️  libnotify already installed"
+fi
+
+# =============================================================================
+# Docker Desktop
+# https://docs.docker.com/desktop/setup/install/linux/debian/
+# =============================================================================
+
+# Set up Docker repository if not already configured
+if [[ ! -f /usr/share/keyrings/docker.gpg ]]; then
+  echo "🐳 Setting up Docker repository..."
+
+  # Install required packages
+  sudo apt install -y ca-certificates gnupg
+
+  # Add Docker's official GPG key
+  curl -fsSL https://download.docker.com/linux/debian/gpg | \
+    sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
+  sudo chmod a+r /usr/share/keyrings/docker.gpg
+
+  # Add Docker repository (DEB822 format)
+  cat <<EOF | sudo tee /etc/apt/sources.list.d/docker.sources
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Architectures: amd64
+Signed-By: /usr/share/keyrings/docker.gpg
+EOF
+
+  sudo apt update
+  echo "✅ Docker repository configured"
+fi
+
+# Install Docker Desktop
+if ! dpkg -l docker-desktop 2>/dev/null | grep -q "^ii"; then
+  echo "🐳 Installing Docker Desktop..."
+
+  # Install gnome-terminal (required for non-GNOME environments)
+  if ! command -v gnome-terminal &>/dev/null; then
+    sudo apt install -y gnome-terminal
+  fi
+
+  # Download and install Docker Desktop DEB package
+  DOCKER_DESKTOP_DEB="/tmp/docker-desktop-amd64.deb"
+  curl -fsSL -o "${DOCKER_DESKTOP_DEB}" \
+    "https://desktop.docker.com/linux/main/amd64/docker-desktop-amd64.deb"
+  sudo apt install -y "${DOCKER_DESKTOP_DEB}"
+  rm -f "${DOCKER_DESKTOP_DEB}"
+
+  # Add current user to docker group
+  if ! groups "${USER}" | grep -q '\bdocker\b'; then
+    sudo usermod -aG docker "${USER}"
+    echo "⚠️  Added ${USER} to docker group - please log out and back in"
+  fi
+
+  echo "✅ Docker Desktop installed"
+else
+  echo "⏭️  Docker Desktop already installed"
 fi
 
 echo ""
