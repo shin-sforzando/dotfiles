@@ -1,0 +1,104 @@
+{{- if eq .chezmoi.osRelease.id "debian" -}}
+#!/bin/bash
+set -eufo pipefail
+
+echo "🐧 Installing Linux GUI applications..."
+
+# Ensure we have required tools
+if ! command -v curl &>/dev/null; then
+  echo "❌ curl is required but not installed"
+  exit 1
+fi
+
+# Create keyrings directory if it doesn't exist
+sudo mkdir -p /usr/share/keyrings
+
+# =============================================================================
+# Visual Studio Code
+# https://code.visualstudio.com/docs/setup/linux
+# =============================================================================
+if ! command -v code &>/dev/null; then
+  echo "📝 Installing Visual Studio Code..."
+
+  # Download and install Microsoft GPG key
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    sudo tee /usr/share/keyrings/microsoft-vscode.gpg >/dev/null
+
+  # Add VSCode repository (DEB822 format)
+  cat <<'EOF' | sudo tee /etc/apt/sources.list.d/vscode.sources
+Types: deb
+URIs: https://packages.microsoft.com/repos/code
+Suites: stable
+Components: main
+Architectures: amd64 arm64 armhf
+Signed-By: /usr/share/keyrings/microsoft-vscode.gpg
+EOF
+
+  sudo apt update
+  sudo apt install -y code
+  echo "✅ Visual Studio Code installed"
+else
+  echo "⏭️  Visual Studio Code already installed"
+fi
+
+# =============================================================================
+# Vivaldi Browser
+# https://help.vivaldi.com/desktop/install-update/manual-setup-vivaldi-linux-repositories/
+# =============================================================================
+if ! command -v vivaldi &>/dev/null; then
+  echo "🌐 Installing Vivaldi Browser..."
+
+  # Download and install Vivaldi GPG key
+  curl -fsSL https://repo.vivaldi.com/archive/linux_signing_key.pub | \
+    gpg --dearmor | \
+    sudo tee /usr/share/keyrings/vivaldi.gpg >/dev/null
+
+  # Add Vivaldi repository (DEB822 format)
+  cat <<'EOF' | sudo tee /etc/apt/sources.list.d/vivaldi.sources
+Types: deb
+URIs: https://repo.vivaldi.com/archive/deb/
+Suites: stable
+Components: main
+Architectures: amd64 arm64 armhf
+Signed-By: /usr/share/keyrings/vivaldi.gpg
+EOF
+
+  sudo apt update
+  sudo apt install -y vivaldi-stable
+  echo "✅ Vivaldi Browser installed"
+else
+  echo "⏭️  Vivaldi Browser already installed"
+fi
+
+# =============================================================================
+# Ghostty Terminal Emulator
+# https://debian.griffo.io/
+# =============================================================================
+if ! command -v ghostty &>/dev/null; then
+  echo "👻 Installing Ghostty Terminal..."
+
+  # Add debian.griffo.io repository (provides Ghostty and other dev tools)
+  curl -fsSL https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | \
+    gpg --dearmor | \
+    sudo tee /usr/share/keyrings/debian-griffo.gpg >/dev/null
+
+  # Add repository (DEB822 format)
+  cat <<EOF | sudo tee /etc/apt/sources.list.d/debian-griffo.sources
+Types: deb
+URIs: https://debian.griffo.io/apt
+Suites: $(lsb_release -sc 2>/dev/null || echo trixie)
+Components: main
+Signed-By: /usr/share/keyrings/debian-griffo.gpg
+EOF
+
+  sudo apt update
+  sudo apt install -y ghostty
+  echo "✅ Ghostty installed"
+else
+  echo "⏭️  Ghostty already installed"
+fi
+
+echo ""
+echo "✅ Linux GUI applications installation completed!"
+{{ end -}}
