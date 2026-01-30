@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -eufo pipefail
 
 # Sheldon plugins.toml hash: {{ include "private_dot_config/sheldon/plugins.toml" | sha256sum }}

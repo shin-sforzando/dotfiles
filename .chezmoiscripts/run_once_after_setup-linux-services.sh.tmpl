@@ -1,5 +1,6 @@
 {{- if eq .chezmoi.osRelease.id "debian" -}}
 #!/bin/bash
+
 set -eufo pipefail
 
 echo "🔧 Setting up Linux services..."
@@ -8,11 +9,14 @@ echo "🔧 Setting up Linux services..."
 sudo mkdir -p /usr/share/keyrings
 
 # =============================================================================
-# 1Password
+# 1Password & 1Password CLI
 # https://support.1password.com/install-linux/#debian-or-ubuntu
+# https://developer.1password.com/docs/cli/get-started/
 # =============================================================================
-if ! command -v 1password &>/dev/null; then
-  echo "🔑 Installing 1Password..."
+
+# Set up 1Password repository if not already configured
+if [[ ! -f /usr/share/keyrings/1password-archive-keyring.gpg ]]; then
+  echo "🔑 Setting up 1Password repository..."
 
   # Add GPG key
   curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
@@ -31,10 +35,24 @@ if ! command -v 1password &>/dev/null; then
     sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
 
   sudo apt update
+fi
+
+# Install 1Password GUI
+if ! command -v 1password &>/dev/null; then
+  echo "🔑 Installing 1Password..."
   sudo apt install -y 1password
   echo "✅ 1Password installed"
 else
   echo "⏭️  1Password already installed"
+fi
+
+# Install 1Password CLI
+if ! command -v op &>/dev/null; then
+  echo "🔑 Installing 1Password CLI..."
+  sudo apt install -y 1password-cli
+  echo "✅ 1Password CLI installed"
+else
+  echo "⏭️  1Password CLI already installed"
 fi
 
 # =============================================================================
