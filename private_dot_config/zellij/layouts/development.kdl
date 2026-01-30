@@ -50,4 +50,9 @@ layout {
     pane
     pane
   }
+
+  tab name="rendez-vous" cwd="~/Workspace/github.com/shin-sforzando/rendez-vous" split_direction="vertical" {
+    pane
+    pane
+  }
 }

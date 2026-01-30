@@ -14,6 +14,8 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 - [Features](#features)
 - [Quick Start](#quick-start)
   - [New Machine Setup](#new-machine-setup)
+    - [Install Homebrew](#install-homebrew)
+    - [Init with chezmoi](#init-with-chezmoi)
   - [Manual Steps](#manual-steps)
 - [Migration from Prezto](#migration-from-prezto)
 - [Daily Usage](#daily-usage)
@@ -43,11 +45,19 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 
 ### New Machine Setup
 
-```bash
-# 1. Install Homebrew (macOS) or Linuxbrew (Linux)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+> [! NOTE]
+> Please perform the following steps in Zsh.
+> macOS now defaults to Zsh, but Linux does not necessarily default to Zsh.
 
-# 2. Install chezmoi and apply dotfiles in one command
+#### Install Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Init with chezmoi
+
+```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply shin-sforzando
 ```
 
@@ -95,7 +105,8 @@ The guide covers:
 ### Update dotfiles
 
 > [!NOTE]
-> Auto-commit and auto-push are enabled. Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
+> Auto-commit and auto-push are enabled.
+> Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
 
 ```bash
 # Edit a file
@@ -130,7 +141,8 @@ All `*.zsh` files in `~/.config/zsh/aliases/` are automatically loaded by `.zshr
 ### Edit Brewfile
 
 > [!IMPORTANT]
-> `Brewfile` is NOT copied to `~/` to avoid accidental edits. It only exists in the chezmoi source directory.
+> `Brewfile` is NOT copied to `~/` to avoid accidental edits.
+> It only exists in the chezmoi source directory.
 
 Brewfile is a Ruby DSL. Platform-specific packages are guarded by `OS.mac?` / `OS.linux?`:
 

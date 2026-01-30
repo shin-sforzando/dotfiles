@@ -139,7 +139,7 @@ brew "neovim"
 brew "nkf"
 
 # feature rich terminal pager
-brew "noborus/tap/ov"
+brew "ov"
 
 # Swiss-army knife of markup format conversion
 brew "pandoc"
