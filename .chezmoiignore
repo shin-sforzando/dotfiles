@@ -1,3 +1,6 @@
+# GitHub Actions (repository only, not synced to HOME)
+.github/
+
 # OAuth tokens, caches, credentials (should NOT be synced)
 .claude.json
 

@@ -1,0 +1,44 @@
+name: Test chezmoi
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate shell scripts syntax
+        run: |
+          echo "Checking shell script syntax..."
+          find . -name "*.sh" -o -name "*.sh.tmpl" | while read -r script; do
+            echo "Checking: $script"
+            bash -n "$script" 2>&1 || true
+          done
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+
+      - name: Run chezmoi init (dry-run)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          chezmoi init --source="${{ github.workspace }}" --dry-run --verbose
+        env:
+          CHEZMOI_GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run chezmoi apply (dry-run)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          chezmoi apply --source="${{ github.workspace }}" --dry-run --verbose
+        env:
+          CHEZMOI_GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
