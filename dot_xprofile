@@ -1,0 +1,8 @@
+#
+# Executed by display managers at X11 session login.
+#
+
+# fcitx5 input method
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx

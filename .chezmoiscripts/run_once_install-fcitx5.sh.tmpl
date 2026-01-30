@@ -1,0 +1,91 @@
+{{- if eq .chezmoi.osRelease.id "debian" -}}
+#!/bin/bash
+set -eufo pipefail
+
+echo "🇯🇵 Installing fcitx5 Japanese input method..."
+
+# =============================================================================
+# fcitx5 + Mozc + Japanese fonts
+# =============================================================================
+PACKAGES=(
+  # fcitx5
+  fcitx5
+  fcitx5-mozc
+  fcitx5-frontend-gtk3
+  fcitx5-frontend-gtk4  # Required for GTK4 apps (e.g., Ghostty)
+  fcitx5-frontend-qt5
+  fcitx5-config-qt      # GUI configuration tool
+  # Japanese fonts
+  fonts-noto-cjk
+  fonts-noto-cjk-extra
+  fonts-noto-color-emoji
+)
+
+# Check if all packages are already installed
+ALL_INSTALLED=true
+for pkg in "${PACKAGES[@]}"; do
+  if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+    ALL_INSTALLED=false
+    break
+  fi
+done
+
+if [ "$ALL_INSTALLED" = false ]; then
+  echo "📦 Installing fcitx5 and Japanese font packages..."
+  sudo apt update
+  sudo apt install -y "${PACKAGES[@]}"
+  echo "✅ fcitx5 and Japanese font packages installed"
+else
+  echo "⏭️  fcitx5 and Japanese font packages already installed"
+fi
+
+# =============================================================================
+# Set fcitx5 as default input method using im-config
+# =============================================================================
+if command -v im-config &>/dev/null; then
+  echo "⚙️  Setting fcitx5 as default input method..."
+  im-config -n fcitx5
+  echo "✅ fcitx5 set as default input method"
+fi
+
+# =============================================================================
+# Enable fcitx5 autostart
+# =============================================================================
+AUTOSTART_DIR="$HOME/.config/autostart"
+AUTOSTART_FILE="$AUTOSTART_DIR/org.fcitx.Fcitx5.desktop"
+
+if [ ! -f "$AUTOSTART_FILE" ]; then
+  echo "🚀 Enabling fcitx5 autostart..."
+  mkdir -p "$AUTOSTART_DIR"
+
+  # Copy system desktop file or create one
+  if [ -f /usr/share/applications/org.fcitx.Fcitx5.desktop ]; then
+    cp /usr/share/applications/org.fcitx.Fcitx5.desktop "$AUTOSTART_FILE"
+  else
+    cat > "$AUTOSTART_FILE" << 'EOF'
+[Desktop Entry]
+Name=Fcitx 5
+GenericName=Input Method
+Comment=Start Input Method
+Exec=fcitx5
+Icon=org.fcitx.Fcitx5
+Terminal=false
+Type=Application
+Categories=System;Utility;
+X-GNOME-Autostart-Phase=Applications
+X-GNOME-AutoRestart=false
+X-GNOME-Autostart-Notify=false
+X-KDE-autostart-after=panel
+EOF
+  fi
+  echo "✅ fcitx5 autostart enabled"
+else
+  echo "⏭️  fcitx5 autostart already configured"
+fi
+
+echo ""
+echo "✅ fcitx5 installation completed!"
+echo ""
+echo "📝 Note: Log out and log back in for changes to take effect."
+echo "   After login, run 'fcitx5-configtool' to add Mozc input method."
+{{ end -}}
