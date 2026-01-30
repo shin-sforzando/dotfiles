@@ -25,7 +25,7 @@
       {
         "hooks": [
           {
-            "command": "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"stop\"}' | ~/.claude/notify.sh",
+            "command": "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh",
             "type": "command"
           }
         ],
