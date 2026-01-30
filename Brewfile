@@ -234,11 +234,6 @@ brew "zoxide"
 # UNIX shell (command interpreter)
 brew "zsh"
 
-## Linux only
-if OS.linux?
-  brew "libnotify"  # Desktop notifications via notify-send
-end
-
 ## macOS only
 if OS.mac?
   # macOS-specific formulae

@@ -99,6 +99,39 @@ else
   echo "⏭️  Ghostty already installed"
 fi
 
+# =============================================================================
+# OpenSSH Server
+# =============================================================================
+if ! dpkg -l openssh-server 2>/dev/null | grep -q "^ii"; then
+  echo "🔐 Installing OpenSSH Server..."
+  sudo apt install -y openssh-server
+  echo "✅ OpenSSH Server installed"
+else
+  echo "⏭️  OpenSSH Server already installed"
+fi
+
+# =============================================================================
+# x11vnc
+# =============================================================================
+if ! command -v x11vnc &>/dev/null; then
+  echo "🖥️ Installing x11vnc..."
+  sudo apt install -y x11vnc
+  echo "✅ x11vnc installed"
+else
+  echo "⏭️  x11vnc already installed"
+fi
+
+# =============================================================================
+# libnotify (for desktop notifications via notify-send)
+# =============================================================================
+if ! command -v notify-send &>/dev/null; then
+  echo "🔔 Installing libnotify..."
+  sudo apt install -y libnotify-bin
+  echo "✅ libnotify installed"
+else
+  echo "⏭️  libnotify already installed"
+fi
+
 echo ""
-echo "✅ Linux GUI applications installation completed!"
+echo "✅ Linux packages installation completed!"
 {{ end -}}

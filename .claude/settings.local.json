@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(apt-cache:*)"
+      "Bash(apt-cache:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

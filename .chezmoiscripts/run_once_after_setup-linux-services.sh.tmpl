@@ -1,0 +1,176 @@
+{{- if eq .chezmoi.osRelease.id "debian" -}}
+#!/bin/bash
+set -eufo pipefail
+
+echo "🔧 Setting up Linux services..."
+
+# Create keyrings directory if it doesn't exist
+sudo mkdir -p /usr/share/keyrings
+
+# =============================================================================
+# 1Password
+# https://support.1password.com/install-linux/#debian-or-ubuntu
+# =============================================================================
+if ! command -v 1password &>/dev/null; then
+  echo "🔑 Installing 1Password..."
+
+  # Add GPG key
+  curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
+    sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+
+  # Add repository
+  echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | \
+    sudo tee /etc/apt/sources.list.d/1password.list
+
+  # Set up debsig-verify policy
+  sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
+  curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | \
+    sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol >/dev/null
+  sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+  curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
+    sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+
+  sudo apt update
+  sudo apt install -y 1password
+  echo "✅ 1Password installed"
+else
+  echo "⏭️  1Password already installed"
+fi
+
+# =============================================================================
+# Tailscale VPN
+# https://tailscale.com/kb/1031/install-linux
+# =============================================================================
+if ! command -v tailscale &>/dev/null; then
+  echo "🔗 Installing Tailscale..."
+  curl -fsSL https://tailscale.com/install.sh | sh
+  echo "✅ Tailscale installed"
+else
+  echo "⏭️  Tailscale already installed"
+fi
+
+# =============================================================================
+# SSH Server Configuration (Port 2222)
+# =============================================================================
+echo "🔐 Configuring SSH server..."
+
+# Check if openssh-server is installed
+if ! dpkg -l openssh-server 2>/dev/null | grep -q "^ii"; then
+  echo "⚠️  openssh-server not installed, skipping SSH configuration"
+else
+  # Backup original sshd_config if not already backed up
+  if [[ -f /etc/ssh/sshd_config ]] && [[ ! -f /etc/ssh/sshd_config.original ]]; then
+    sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.original
+  fi
+
+  # Configure SSH to listen on port 2222
+  if [[ -f /etc/ssh/sshd_config ]] && ! grep -q "^Port 2222" /etc/ssh/sshd_config; then
+    # Comment out existing Port line and add new one
+    sudo sed -i 's/^#\?Port .*/# Port 22 (disabled)/' /etc/ssh/sshd_config
+    echo "Port 2222" | sudo tee -a /etc/ssh/sshd_config >/dev/null
+    echo "✅ SSH configured to listen on port 2222"
+  else
+    echo "⏭️  SSH already configured for port 2222"
+  fi
+
+  # Enable and restart SSH service (try both ssh and sshd service names)
+  if systemctl list-unit-files ssh.service &>/dev/null; then
+    sudo systemctl enable ssh
+    sudo systemctl restart ssh
+    echo "✅ SSH server enabled and running on port 2222"
+  elif systemctl list-unit-files sshd.service &>/dev/null; then
+    sudo systemctl enable sshd
+    sudo systemctl restart sshd
+    echo "✅ SSH server enabled and running on port 2222"
+  else
+    echo "⚠️  SSH service not found in systemd, may need manual configuration"
+  fi
+fi
+
+# =============================================================================
+# x11vnc Configuration
+# =============================================================================
+echo "🖥️ Configuring x11vnc..."
+
+# Check if x11vnc is installed
+if ! command -v x11vnc &>/dev/null; then
+  echo "⚠️  x11vnc not installed, skipping x11vnc configuration"
+else
+  # Create systemd service for x11vnc
+  cat <<'EOF' | sudo tee /etc/systemd/system/x11vnc.service >/dev/null
+[Unit]
+Description=x11vnc (Remote access)
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/x11vnc -auth guess -display :0 -rfbauth /etc/x11vnc.passwd -rfbport 5900 -forever -loop -noxdamage -repeat -xkb -shared -avahi -nap -wait 50
+ExecStop=/bin/kill -TERM $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=control-group
+Restart=on-failure
+
+[Install]
+WantedBy=graphical.target
+EOF
+
+  sudo systemctl daemon-reload
+
+  # Enable x11vnc service (will start after password is set)
+  if [[ -f /etc/x11vnc.passwd ]]; then
+    sudo systemctl enable x11vnc
+    sudo systemctl start x11vnc || true
+    echo "✅ x11vnc service enabled and started"
+  else
+    echo "⚠️  x11vnc service created but not started (password not set)"
+  fi
+fi
+
+# =============================================================================
+# Firewall Configuration (ufw)
+# =============================================================================
+echo "🔥 Configuring firewall..."
+
+# Install ufw if not present
+if ! command -v ufw &>/dev/null; then
+  sudo apt install -y ufw
+fi
+
+# Configure firewall rules
+sudo ufw allow 2222/tcp comment 'SSH on custom port'
+sudo ufw allow 5900/tcp comment 'VNC'
+sudo ufw allow 60000:61000/udp comment 'Mosh'
+
+# Enable ufw if not already enabled
+if ! sudo ufw status | grep -q "Status: active"; then
+  echo "y" | sudo ufw enable
+fi
+
+echo "✅ Firewall configured"
+
+# =============================================================================
+# Summary and Manual Steps
+# =============================================================================
+echo ""
+echo "=============================================="
+echo "✅ Linux services setup completed!"
+echo "=============================================="
+echo ""
+echo "📋 Services configured:"
+echo "   - SSH Server: port 2222"
+echo "   - VNC Server: port 5900 (x11vnc on display :0)"
+echo "   - Firewall: SSH(2222), VNC(5900), Mosh(60000-61000/UDP)"
+echo ""
+echo "⚠️  Manual steps required:"
+echo ""
+echo "   1. Set VNC password:"
+echo "      sudo x11vnc -storepasswd /etc/x11vnc.passwd"
+echo "      sudo systemctl start x11vnc"
+echo ""
+echo "   2. Authenticate Tailscale:"
+echo "      sudo tailscale up"
+echo ""
+echo "   3. Sign in to 1Password:"
+echo "      Open 1Password app and sign in with your account"
+echo ""
+{{ end -}}

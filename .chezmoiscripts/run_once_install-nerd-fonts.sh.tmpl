@@ -12,10 +12,10 @@ else
 fi
 
 {{ if ne .chezmoi.os "darwin" -}}
-# Linux: Refresh font cache
+# Linux: Refresh font cache (ignore errors from symlink loops)
 if command -v fc-cache &>/dev/null; then
   echo "🔄 Refreshing font cache..."
-  fc-cache -fv
+  fc-cache -fv || true
 fi
 {{ end -}}
 
