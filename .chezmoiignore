@@ -2,21 +2,7 @@
 .claude.json
 
 # Claude Code runtime files (should NOT be synced)
-.claude/debug/
-.claude/file-history/
-.claude/history.jsonl
-.claude/ide/
-.claude/plans/
-.claude/projects/
-.claude/session-env/
-.claude/shell-snapshots/
-.claude/stats-cache.json
-.claude/statsig/
-.claude/telemetry/
-.claude/todos/
-.claude/.update.lock
-.claude/firebase-debug.log
-.claude/config/
+.claude/
 
 # Zsh runtime files
 .zsh_history
@@ -26,6 +12,10 @@
 
 # Local-only files
 .DS_Store
+.editorconfig
+
+# Wallpapers
+wallpapers/
 
 # Repository documentation files (should NOT be synced to HOME)
 # These are documentation for the chezmoi repository itself
