@@ -15,11 +15,11 @@ layout {
   }
 
   tab name="Home" split_direction="horizontal" {
-    pane {
-      name "Claude Monitor"
-      command "claude-monitor"
-      args "--theme" "dark" "--timezone" "Asia/Tokyo" "--time-format" "24h" "--plan" "max20"
-    }
+    // pane {
+    //   name "Claude Monitor"
+    //   command "claude-monitor"
+    //   args "--theme" "dark" "--timezone" "Asia/Tokyo" "--time-format" "24h" "--plan" "max20"
+    // }
     pane {
       name "Sandbox"
       focus true
@@ -47,11 +47,6 @@ layout {
   }
 
   tab name="FLYEARS" cwd="~/Workspace/github.com/sforzando/FLYEARS" split_direction="vertical" {
-    pane
-    pane
-  }
-
-  tab name="rendez-vous" cwd="~/Workspace/github.com/shin-sforzando/rendez-vous" split_direction="vertical" {
     pane
     pane
   }
