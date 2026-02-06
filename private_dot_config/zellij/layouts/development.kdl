@@ -36,7 +36,7 @@ layout {
     pane
   }
 
-  tab name="IPX" cwd="~/Workspace/github.com/sforzando" split_direction="vertical" {
+  tab name="IPX" cwd="~/Workspace/github.com/sforzando/ipx-prod" split_direction="vertical" {
     pane
     pane
   }
