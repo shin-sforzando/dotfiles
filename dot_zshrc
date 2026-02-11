@@ -450,6 +450,12 @@ if [[ -n $GHOSTTY_RESOURCES_DIR ]]; then
   source "$GHOSTTY_RESOURCES_DIR"/shell-integration/zsh/ghostty-integration
 fi
 
+## OpenClaw
+#
+if (( $+commands[openclaw] )); then
+  source "$HOME/.openclaw/completions/openclaw.zsh"
+fi
+
 # End Profiling
 #if type zprof > /dev/null 2>&1; then
 #  zprof | less
