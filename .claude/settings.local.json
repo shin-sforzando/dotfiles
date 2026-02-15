@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "Bash(apt-cache:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(chezmoi status:*)",
+      "Bash(chezmoi diff:*)"
     ]
   }
 }

@@ -5,7 +5,10 @@
 .claude.json
 
 # Claude Code runtime files (should NOT be synced)
-.claude/
+# Exclude all files in .claude/ except settings.json and scripts/
+.claude/*
+!.claude/settings.json
+!.claude/scripts/
 
 # Zsh runtime files
 .zsh_history
