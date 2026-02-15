@@ -4,6 +4,8 @@
 
 [![Last Commit](https://img.shields.io/github/last-commit/shin-sforzando/dotfiles)](https://github.com/shin-sforzando/dotfiles/graphs/commit-activity)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![managed with chezmoi](https://img.shields.io/badge/managed%20with-chezmoi-blue)](https://www.chezmoi.io/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)](https://github.com/shin-sforzando/dotfiles)
 
 <!-- Synopsis -->
 
@@ -12,6 +14,7 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 <!-- TOC -->
 
 - [Features](#features)
+- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
   - [New Machine Setup](#new-machine-setup)
     - [Install Homebrew](#install-homebrew)
@@ -24,13 +27,11 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
   - [Add custom aliases](#add-custom-aliases)
   - [Edit Brewfile](#edit-brewfile)
 - [Key Components](#key-components)
+  - [Managed Configurations](#managed-configurations)
   - [Sheldon Plugins](#sheldon-plugins)
   - [Starship Prompt](#starship-prompt)
   - [Neovim](#neovim)
 - [Troubleshooting](#troubleshooting)
-  - [Shell doesn't recognize commands](#shell-doesnt-recognize-commands)
-  - [Plugins not loading](#plugins-not-loading)
-  - [chezmoi not applying changes](#chezmoi-not-applying-changes)
 - [References](#references)
 - [Misc](#misc)
 
@@ -41,11 +42,21 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
 - **Modern**: Starship prompt, lazy.nvim, and latest CLI tools
 - **Automated**: One-command setup via Homebrew / Linuxbrew
 
+## Prerequisites
+
+Before starting, ensure you have:
+
+- **Operating System**: macOS (Apple Silicon) or MX Linux
+- **Shell**: Zsh (macOS default; install on Linux if needed)
+- **Tools**: Git, curl
+- **Network**: Internet connection for package installation
+- **Permissions**: Sudo access for shell and package manager setup
+
 ## Quick Start
 
 ### New Machine Setup
 
-> [! NOTE]
+> [!NOTE]
 > Please perform the following steps in Zsh.
 > macOS now defaults to Zsh, but Linux does not necessarily default to Zsh.
 
@@ -105,8 +116,9 @@ The guide covers:
 ### Update dotfiles
 
 > [!NOTE]
-> Auto-commit and auto-push are enabled.
-> Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed.
+> Auto-commit and auto-push are enabled via chezmoi's `git.autoCommit` and `git.autoPush` settings.
+> Changes made via `chezmoi add`, `chezmoi edit`, or `chezmoi apply` are automatically committed and pushed to the remote repository.
+> This ensures your dotfiles are always backed up and synchronized across machines.
 
 ```bash
 # Edit a file
@@ -161,6 +173,26 @@ brew bundle --file=~/.local/share/chezmoi/Brewfile
 
 ## Key Components
 
+### Managed Configurations
+
+This repository manages configurations for the following applications:
+
+| Tool | Description | Config Path |
+| ------ | ------------- | ------------- |
+| **Ghostty** | GPU-accelerated terminal emulator | `~/.config/ghostty/` |
+| **Helix** | Post-modern modal text editor | `~/.config/helix/` |
+| **Neovim** | Vim-fork with lazy.nvim plugin manager | `~/.config/nvim/` |
+| **Zellij** | Terminal workspace and multiplexer | `~/.config/zellij/` |
+| **Yazi** | Blazing fast terminal file manager | `~/.config/yazi/` (auto-installs packages) |
+| **direnv** | Per-directory environment variables | `~/.config/direnv/` |
+| **ov** | Feature-rich terminal pager | `~/.config/ov/` |
+| **Starship** | Cross-shell prompt | `~/.config/starship.toml` |
+| **Sheldon** | Fast Zsh plugin manager | `~/.config/sheldon/` |
+| **topgrade** | System update manager | `~/.config/topgrade.toml` |
+
+> [!NOTE]
+> Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
+
 ### Sheldon Plugins
 
 Only 5 essential plugins for fast startup:
@@ -191,42 +223,39 @@ Minimal configuration using lazy.nvim:
 
 ## Troubleshooting
 
-### Shell doesn't recognize commands
+For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**.
 
-```bash
-# Reload shell configuration
-source ~/.zshrc
+**Quick fixes:**
 
-# Or restart terminal
-```
+- **Shell doesn't recognize commands**: `source ~/.zshrc` or restart terminal
+- **Plugins not loading**: `sheldon lock --update` and `exec zsh`
+- **chezmoi not applying changes**: `chezmoi diff` then `chezmoi apply --force`
+- **PATH not working**: Check `~/.zprofile` exists and run `exec zsh`
+- **GPG/SSH issues**: `gpgconf --kill gpg-agent` then `exec zsh`
 
-### Plugins not loading
+**Common issues:**
 
-```bash
-# Update Sheldon lock file
-sheldon lock --update
+- [Initial setup problems](./TROUBLESHOOTING.md#初期セットアップ)
+- [Shell and prompt issues](./TROUBLESHOOTING.md#シェルプロンプト)
+- [chezmoi-specific problems](./TROUBLESHOOTING.md#chezmoi)
+- [GPG/SSH/YubiKey setup](./TROUBLESHOOTING.md#gpgsshyubikey)
 
-# Verify plugins are installed
-sheldon source
-```
-
-### chezmoi not applying changes
-
-```bash
-# Check what would change
-chezmoi diff
-
-# Force apply
-chezmoi apply --force
-```
+**Migrating from Prezto?** See [MIGRATION.md](./MIGRATION.md) for migration-specific troubleshooting.
 
 ## References
 
-- [chezmoi](https://www.chezmoi.io)
-- [Sheldon](https://sheldon.cli.rs)
-- [Starship](https://starship.rs)
-- [lazy.nvim](https://lazy.folke.io)
-- [topgrade](https://github.com/topgrade-rs/topgrade)
+- [chezmoi](https://www.chezmoi.io) - Manage your dotfiles across multiple machines
+- [Sheldon](https://sheldon.cli.rs) - Fast, configurable shell plugin manager
+- [Starship](https://starship.rs) - Cross-shell prompt
+- [Ghostty](https://ghostty.org) - GPU-accelerated terminal emulator
+- [Helix](https://helix-editor.com) - Post-modern modal text editor
+- [Neovim](https://neovim.io) - Hyperextensible Vim-based text editor
+- [lazy.nvim](https://lazy.folke.io) - Modern plugin manager for Neovim
+- [Zellij](https://zellij.dev) - Terminal workspace and multiplexer
+- [Yazi](https://yazi-rs.github.io) - Blazing fast terminal file manager
+- [direnv](https://direnv.net) - Unclutter your .profile
+- [ov](https://noborus.github.io/ov/) - Feature-rich terminal pager
+- [topgrade](https://github.com/topgrade-rs/topgrade) - Upgrade all the things
 
 ## Misc
 
