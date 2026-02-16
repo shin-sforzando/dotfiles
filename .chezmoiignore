@@ -27,6 +27,7 @@ wallpapers/
 # These are documentation for the chezmoi repository itself
 MIGRATION.md
 README.md
+TROUBLESHOOTING.md
 
 # Brewfile stays in chezmoi source directory only
 # Avoid accidental edits in HOME directory
