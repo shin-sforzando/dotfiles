@@ -9,6 +9,7 @@
 .claude/*
 !.claude/settings.json
 !.claude/scripts/
+!.claude/commands/
 
 # Zsh runtime files
 .zsh_history
