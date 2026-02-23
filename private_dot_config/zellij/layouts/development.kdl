@@ -15,11 +15,11 @@ layout {
   }
 
   tab name="Home" split_direction="horizontal" {
-    // pane {
-    //   name "Claude Monitor"
-    //   command "claude-monitor"
-    //   args "--theme" "dark" "--timezone" "Asia/Tokyo" "--time-format" "24h" "--plan" "max20"
-    // }
+    pane {
+      name "Claude Monitor"
+      command "claude-monitor"
+      args "--theme" "dark" "--timezone" "Asia/Tokyo" "--time-format" "24h" "--plan" "max20"
+    }
     pane {
       name "Sandbox"
       focus true
