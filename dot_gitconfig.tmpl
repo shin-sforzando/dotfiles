@@ -65,11 +65,10 @@
 	side-by-side = true
 [delta "interactive"]
 	keep-plus-minus-markers = false
-[credential]
 {{- if eq .chezmoi.os "darwin" }}
+[credential]
 	helper = osxkeychain
 {{- end }}
-	helper = cache --timeout 604800
 [fetch]
 	prune = true
 [filter "lfs"]
@@ -93,3 +92,8 @@
 	patterns = (\"|')?(AWS|aws|Aws)?_?(SECRET|secret|Secret)?_?(ACCESS|access|Access)?_?(KEY|key|Key)(\"|')?\\s*(:|=>|=)\\s*(\"|')?[A-Za-z0-9/\\+=]{40}(\"|')?
 [credential "https://github.com"]
 	useHttpPath = true
+	helper = 
+	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
