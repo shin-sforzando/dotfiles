@@ -3,6 +3,9 @@ tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 tap "satococoa/tap"
 
 ## Install Packages
+# The magical shell history
+brew "atuin"
+
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
 

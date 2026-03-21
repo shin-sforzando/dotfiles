@@ -64,7 +64,11 @@ echo "     gpg --keyserver hkps://keys.openpgp.org --search-keys shin@sforzando.
 echo "     gpg --edit-key KEYID"
 echo "     > trust"
 echo ""
-echo "  2. Set default shell:"
+echo "  2. Atuin shell history sync:"
+echo "     atuin login"
+echo "     atuin sync"
+echo ""
+echo "  3. Set default shell:"
 {{ if eq .chezmoi.os "darwin" -}}
 echo "     sudo chsh -s \$(brew --prefix)/bin/zsh"
 {{ else -}}

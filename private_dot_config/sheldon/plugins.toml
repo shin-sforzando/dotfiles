@@ -12,6 +12,9 @@ github = "zsh-users/zsh-history-substring-search"
 [plugins.zsh-you-should-use]
 github = "MichaelAquilina/zsh-you-should-use"
 
+[plugins.atuin]
+inline = 'eval "$(atuin init zsh)"'
+
 # IMPORTANT: zsh-syntax-highlighting MUST be loaded last
 [plugins.zsh-syntax-highlighting]
 github = "zsh-users/zsh-syntax-highlighting"
