@@ -49,7 +49,16 @@ background-opacity-cells = true
 # unfocused-split-fill = #000000
 split-divider-color = #cccccc
 
-window-inherit-working-directory = true
+# Notification
+notify-on-command-finish = always
+notify-on-command-finish-action = notify
+notify-on-command-finish-after = 30s
+
+# Working Directory Inheritance
+window-inherit-working-directory = false
+tab-inherit-working-directory = true
+split-inherit-working-directory = true
+
 quit-after-last-window-closed = true
 
 macos-option-as-alt = left
