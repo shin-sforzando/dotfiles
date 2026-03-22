@@ -96,7 +96,15 @@ chsh -s $(which zsh)
 gpg --keyserver hkps://keys.openpgp.org --search-keys shin@sforzando.co.jp
 gpg --edit-key KEYID
 > trust
+
+# 3. Log in to Atuin for shell history sync
+atuin login --key "$(op read "op://Personal/Atuin Key/key")"
+atuin sync
 ```
+
+> [!NOTE]
+> The encryption key is stored in 1Password ("Atuin Key" item) and retrieved via the `op` CLI.
+> On the first machine, save your key to 1Password with: `atuin key | op item create --category Password --title "Atuin Key" --field "key[concealed]=$(cat)"`
 
 ## Migration from Prezto
 
@@ -189,6 +197,7 @@ This repository manages configurations for the following applications:
 | **Starship** | Cross-shell prompt | `~/.config/starship.toml` |
 | **Sheldon** | Fast Zsh plugin manager | `~/.config/sheldon/` |
 | **topgrade** | System update manager | `~/.config/topgrade.toml` |
+| **Atuin** | Shell history sync (E2E encrypted) | `~/.config/atuin/` |
 
 > [!NOTE]
 > Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
@@ -256,6 +265,7 @@ For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.
 - [direnv](https://direnv.net) - Unclutter your .profile
 - [ov](https://noborus.github.io/ov/) - Feature-rich terminal pager
 - [topgrade](https://github.com/topgrade-rs/topgrade) - Upgrade all the things
+- [Atuin](https://atuin.sh) - Magical shell history sync
 
 ## Misc
 
