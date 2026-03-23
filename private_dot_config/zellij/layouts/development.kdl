@@ -50,4 +50,10 @@ layout {
     pane
     pane
   }
+
+  tab name="Roblox" cwd="~/Workspace/github.com/sforzando/poc-of-comics" split_direction="vertical" {
+    pane {
+      name "poc-of-comics"
+    }
+  }
 }
