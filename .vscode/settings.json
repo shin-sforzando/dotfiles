@@ -35,6 +35,7 @@
         "cksum",
         "claudecode",
         "claudefordesktop",
+        "cmux",
         "COLORTERM",
         "commitizen",
         "compinit",

@@ -12,7 +12,9 @@ notify() {
   local sound="$3"
   local urgency="${4:-normal}"
 
-  if command -v terminal-notifier &>/dev/null; then
+  if [[ -n ${CMUX_WORKSPACE_ID:-} ]] && [[ -n ${CMUX_SURFACE_ID:-} ]] && command -v cmux &>/dev/null; then
+    cmux notify --title "$title" --subtitle "$project" --body "$message"
+  elif command -v terminal-notifier &>/dev/null; then
     terminal-notifier -title "$title" -subtitle "$project" -message "$message" -sound "$sound"
   elif command -v notify-send &>/dev/null; then
     notify-send -u "$urgency" "$title ($project)" "$message"
