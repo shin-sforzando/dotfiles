@@ -18,6 +18,8 @@ notify() {
     terminal-notifier -title "$title" -subtitle "$project" -message "$message" -sound "$sound"
   elif command -v notify-send &>/dev/null; then
     notify-send -u "$urgency" "$title ($project)" "$message"
+  elif [[ -x /usr/bin/osascript ]]; then
+    /usr/bin/osascript -e "display notification \"$message\" with title \"$title\" subtitle \"$project\""
   fi
 }
 
