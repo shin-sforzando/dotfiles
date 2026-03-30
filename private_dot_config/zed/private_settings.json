@@ -27,4 +27,60 @@
     "light": "One Light",
     "dark": "One Dark",
   },
+  "load_direnv": "shell_hook",
+  "format_on_save": "on",
+  "lsp": {
+    "biome": {
+      "settings": {
+        "require_config_file": true
+      }
+    }
+  },
+  "languages": {
+    "Python": {
+      "formatter": {
+        "language_server": { "name": "ruff" }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.ruff": true,
+        "source.organizeImports.ruff": true
+      }
+    },
+    "TypeScript": {
+      "formatter": {
+        "language_server": { "name": "biome" }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "TSX": {
+      "formatter": {
+        "language_server": { "name": "biome" }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "JavaScript": {
+      "formatter": {
+        "language_server": { "name": "biome" }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "JSX": {
+      "formatter": {
+        "language_server": { "name": "biome" }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    }
+  }
 }
