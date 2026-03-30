@@ -4,6 +4,7 @@ input=$(cat)
 cwd=$(echo "$input" | jq -r '.cwd')
 project=$(basename "$cwd")
 notification_type=$(echo "$input" | jq -r '.notification_type')
+message=$(echo "$input" | jq -r '.message // empty')
 
 notify() {
   local title="$1"
@@ -20,15 +21,21 @@ notify() {
 
 case "$notification_type" in
   "permission_prompt")
-    notify "Claude Code" "Awaiting approval ..." "Ping" "normal"
+    notify "Claude Code" "${message:-Awaiting approval ...}" "Ping" "normal"
     ;;
   "idle_prompt")
-    notify "Claude Code" "Waiting for input ..." "Purr" "low"
+    notify "Claude Code" "${message:-Waiting for input ...}" "Purr" "low"
     ;;
   "stop")
-    notify "Claude Code" "Task completed!" "Glass" "normal"
+    notify "Claude Code" "${message:-Task completed!}" "Glass" "normal"
+    ;;
+  "auth_success")
+    notify "Claude Code" "${message:-Authentication successful}" "Glass" "normal"
+    ;;
+  "elicitation_dialog")
+    notify "Claude Code" "${message:-Input required}" "Ping" "critical"
     ;;
   *)
-    notify "Claude Code" "Notification" "default" "normal"
+    notify "Claude Code" "${message:-Notification}" "default" "normal"
     ;;
 esac
