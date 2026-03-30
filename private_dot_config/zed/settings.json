@@ -53,7 +53,7 @@
     "Python": {
       "formatter": {
         "language_server": {
-          "name": "ruff"
+          "name": "ruff",
         },
       },
       "code_actions_on_format": {
@@ -64,7 +64,7 @@
     "TypeScript": {
       "formatter": {
         "language_server": {
-          "name": "biome"
+          "name": "biome",
         },
       },
       "code_actions_on_format": {
@@ -75,7 +75,7 @@
     "TSX": {
       "formatter": {
         "language_server": {
-          "name": "biome"
+          "name": "biome",
         },
       },
       "code_actions_on_format": {
@@ -86,7 +86,7 @@
     "JavaScript": {
       "formatter": {
         "language_server": {
-          "name": "biome"
+          "name": "biome",
         },
       },
       "code_actions_on_format": {
@@ -97,7 +97,7 @@
     "JSON": {
       "formatter": {
         "language_server": {
-          "name": "biome"
+          "name": "biome",
         },
       },
       "code_actions_on_format": {
@@ -107,7 +107,7 @@
     "CSS": {
       "formatter": {
         "language_server": {
-          "name": "biome"
+          "name": "biome",
         },
       },
       "code_actions_on_format": {

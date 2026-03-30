@@ -185,19 +185,20 @@ brew bundle --file=~/.local/share/chezmoi/Brewfile
 
 This repository manages configurations for the following applications:
 
-| Tool | Description | Config Path |
-| ------ | ------------- | ------------- |
-| **Ghostty** | GPU-accelerated terminal emulator | `~/.config/ghostty/` |
-| **Helix** | Post-modern modal text editor | `~/.config/helix/` |
-| **Neovim** | Vim-fork with lazy.nvim plugin manager | `~/.config/nvim/` |
-| **Zellij** | Terminal workspace and multiplexer | `~/.config/zellij/` |
-| **Yazi** | Blazing fast terminal file manager | `~/.config/yazi/` (auto-installs packages) |
-| **direnv** | Per-directory environment variables | `~/.config/direnv/` |
-| **ov** | Feature-rich terminal pager | `~/.config/ov/` |
-| **Starship** | Cross-shell prompt | `~/.config/starship.toml` |
-| **Sheldon** | Fast Zsh plugin manager | `~/.config/sheldon/` |
-| **topgrade** | System update manager | `~/.config/topgrade.toml` |
-| **Atuin** | Shell history sync (E2E encrypted) | `~/.config/atuin/` |
+| Tool         | Description                             | Config Path                                |
+| ------------ | --------------------------------------- | ------------------------------------------ |
+| **Ghostty**  | GPU-accelerated terminal emulator       | `~/.config/ghostty/`                       |
+| **Helix**    | Post-modern modal text editor           | `~/.config/helix/`                         |
+| **Neovim**   | Vim-fork with lazy.nvim plugin manager  | `~/.config/nvim/`                          |
+| **Zed**      | High-performance, AI-native code editor | `~/.config/zed/`                           |
+| **Zellij**   | Terminal workspace and multiplexer      | `~/.config/zellij/`                        |
+| **Yazi**     | Blazing fast terminal file manager      | `~/.config/yazi/` (auto-installs packages) |
+| **direnv**   | Per-directory environment variables     | `~/.config/direnv/`                        |
+| **ov**       | Feature-rich terminal pager             | `~/.config/ov/`                            |
+| **Starship** | Cross-shell prompt                      | `~/.config/starship.toml`                  |
+| **Sheldon**  | Fast Zsh plugin manager                 | `~/.config/sheldon/`                       |
+| **topgrade** | System update manager                   | `~/.config/topgrade.toml`                  |
+| **Atuin**    | Shell history sync (E2E encrypted)      | `~/.config/atuin/`                         |
 
 > [!NOTE]
 > Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
@@ -260,6 +261,7 @@ For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.
 - [Helix](https://helix-editor.com) - Post-modern modal text editor
 - [Neovim](https://neovim.io) - Hyperextensible Vim-based text editor
 - [lazy.nvim](https://lazy.folke.io) - Modern plugin manager for Neovim
+- [Zed](https://zed.dev) - High-performance, multiplayer code editor
 - [Zellij](https://zellij.dev) - Terminal workspace and multiplexer
 - [Yazi](https://yazi-rs.github.io) - Blazing fast terminal file manager
 - [direnv](https://direnv.net) - Unclutter your .profile
