@@ -7,18 +7,31 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "tabs": {
+    "file_icons": true,
+    "git_status": true,
+  },
+  "title_bar": {
+    "show_branch_icon": true,
+  },
+  "agent": {
+    "favorite_models": [],
+    "play_sound_when_agent_done": true,
+    "model_parameters": [],
+  },
+  "ui_font_family": "HackGen Console NF",
   "agent_servers": {
     "claude-acp": {
-      "type": "registry"
-    }
+      "type": "registry",
+    },
   },
   "buffer_font_family": "HackGen Console NF",
   "telemetry": {
     "diagnostics": true,
-    "metrics": false
+    "metrics": false,
   },
   "session": {
-    "trust_all_worktrees": true
+    "trust_all_worktrees": true,
   },
   "ui_font_size": 16,
   "buffer_font_size": 15,
@@ -32,71 +45,74 @@
   "lsp": {
     "biome": {
       "settings": {
-        "require_config_file": true
-      }
-    }
+        "require_config_file": true,
+      },
+    },
   },
   "languages": {
     "Python": {
       "formatter": {
-        "language_server": { "name": "ruff" }
+        "language_server": {
+          "name": "ruff"
+        },
       },
       "code_actions_on_format": {
         "source.fixAll.ruff": true,
-        "source.organizeImports.ruff": true
-      }
+        "source.organizeImports.ruff": true,
+      },
     },
     "TypeScript": {
       "formatter": {
-        "language_server": { "name": "biome" }
+        "language_server": {
+          "name": "biome"
+        },
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
+        "source.organizeImports.biome": true,
+      },
     },
     "TSX": {
       "formatter": {
-        "language_server": { "name": "biome" }
+        "language_server": {
+          "name": "biome"
+        },
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
+        "source.organizeImports.biome": true,
+      },
     },
     "JavaScript": {
       "formatter": {
-        "language_server": { "name": "biome" }
+        "language_server": {
+          "name": "biome"
+        },
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
-    },
-    "JSX": {
-      "formatter": {
-        "language_server": { "name": "biome" }
+        "source.organizeImports.biome": true,
       },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
-      }
     },
     "JSON": {
       "formatter": {
-        "language_server": { "name": "biome" }
+        "language_server": {
+          "name": "biome"
+        },
       },
       "code_actions_on_format": {
-        "source.fixAll.biome": true
-      }
+        "source.fixAll.biome": true,
+      },
     },
     "CSS": {
       "formatter": {
-        "language_server": { "name": "biome" }
+        "language_server": {
+          "name": "biome"
+        },
       },
       "code_actions_on_format": {
-        "source.fixAll.biome": true
-      }
-    }
-  }
+        "source.fixAll.biome": true,
+      },
+    },
+  },
 }
