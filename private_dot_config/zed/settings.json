@@ -15,9 +15,7 @@
     "show_branch_icon": true,
   },
   "agent": {
-    "favorite_models": [],
     "play_sound_when_agent_done": true,
-    "model_parameters": [],
   },
   "ui_font_family": "HackGen Console NF",
   "agent_servers": {

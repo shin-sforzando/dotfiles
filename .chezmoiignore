@@ -21,8 +21,14 @@
 .DS_Store
 .editorconfig
 
+# Assets
+assets/
+
 # Wallpapers
-wallpapers/
+assets/wallpapers/
+
+# SE
+assets/se/
 
 # Repository documentation files (should NOT be synced to HOME)
 # These are documentation for the chezmoi repository itself
