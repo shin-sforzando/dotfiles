@@ -1,35 +1,9 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  "attribution": {
+    "commit": "",
+    "pr": ""
   },
-  "hooks": {
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/notify.sh"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh"
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/scripts/context-bar.sh"
-  },
+  "autoUpdatesChannel": "stable",
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
@@ -38,10 +12,41 @@
     "feature-dev@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "command": "~/.claude/scripts/notify.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ]
+  },
+  "language": "japanese",
+  "statusLine": {
+    "command": "~/.claude/scripts/context-bar.sh",
+    "type": "command"
   }
 }

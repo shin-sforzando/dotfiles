@@ -17,7 +17,7 @@ notify() {
   elif command -v terminal-notifier &>/dev/null; then
     terminal-notifier -title "$title" -subtitle "$project" -message "$message" -sound "$sound"
   elif command -v notify-send &>/dev/null; then
-    notify-send -u "$urgency" "$title ($project)" "$message"
+    timeout 5 notify-send -u "$urgency" "$title ($project)" "$message" 2>/dev/null || true
   elif [[ -x /usr/bin/osascript ]]; then
     /usr/bin/osascript -e "display notification \"$message\" with title \"$title\" subtitle \"$project\""
   fi
