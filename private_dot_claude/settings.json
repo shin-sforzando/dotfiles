@@ -5,6 +5,7 @@
   },
   "autoUpdatesChannel": "stable",
   "enabledPlugins": {
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "claude-code-setup@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
@@ -19,6 +20,14 @@
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "extraKnownMarketplaces": {
+    "chrome-devtools-plugins": {
+      "source": {
+        "repo": "ChromeDevTools/chrome-devtools-mcp",
+        "source": "github"
+      }
+    }
   },
   "hooks": {
     "Notification": [
@@ -45,6 +54,7 @@
     ]
   },
   "language": "japanese",
+  "skipAutoPermissionPrompt": true,
   "statusLine": {
     "command": "~/.claude/scripts/context-bar.sh",
     "type": "command"
