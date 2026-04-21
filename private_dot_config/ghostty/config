@@ -1,30 +1,9 @@
-# This is the configuration file for Ghostty.
-#
-# This template file has been automatically created at the following
-# path since Ghostty couldn't find any existing config files on your system:
-#
-#   /Users/suzuki/Library/Application Support/com.mitchellh.ghostty/config
-#
-# The template does not set any default options, since Ghostty ships
-# with sensible defaults for all options. Users should only need to set
-# options that they want to change from the default.
-#
-# Run `ghostty +show-config --default --docs` to view a list of
-# all available config options and their default values.
-#
-# Additionally, each config option is also explained in detail
-# on Ghostty's website, at https://ghostty.org/docs/config.
-#
-# Ghostty can reload the configuration while running by using the menu
-# options or the bound key (default: Command + Shift + comma on macOS and
-# Control + Shift + comma on other platforms). Not all config options can be
-# reloaded while running; some only apply to new windows and others may require
-# a full restart to take effect.
+# Font and appearance
 
-font-family = HackGen Console NF
+font-family = "Mononoki Nerd Font Mono Regular"
 font-size = 14
 font-thicken = true
-window-title-font-family = HackGen Console NF
+window-title-font-family = "Mononoki Nerd Font Mono Regular"
 macos-titlebar-style = tabs
 macos-option-as-alt = true
 
@@ -34,7 +13,9 @@ clipboard-trim-trailing-spaces = true
 copy-on-select = true
 
 # Disable automatic shell integration injection
+
 # We manually load it in .zshrc to ensure correct hook order
+
 shell-integration = none
 
 window-padding-x = 8
@@ -45,16 +26,21 @@ window-new-tab-position = end
 
 background-opacity = 0.75
 background-opacity-cells = true
+
 # unfocused-split-opacity = 0.5
+
 # unfocused-split-fill = #000000
+
 split-divider-color = #cccccc
 
 # Notification
+
 notify-on-command-finish = always
 notify-on-command-finish-action = notify
 notify-on-command-finish-after = 30s
 
 # Working Directory Inheritance
+
 window-inherit-working-directory = false
 tab-inherit-working-directory = true
 split-inherit-working-directory = true
@@ -64,4 +50,5 @@ quit-after-last-window-closed = true
 macos-option-as-alt = left
 
 # Newline for Coding Assistant
+
 keybind = shift+enter=text:\n

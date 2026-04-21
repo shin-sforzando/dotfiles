@@ -374,10 +374,6 @@ if (( $+commands[nvim] )); then
   export XDG_CONFIG_HOME="$HOME/.config"
 fi
 
-## Yarn
-#
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-
 ## Volta
 #
 if (( $+commands[volta] )); then
