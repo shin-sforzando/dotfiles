@@ -6,6 +6,7 @@ set -eufo pipefail
 # fmt: off
 NPM_GLOBAL_PACKAGES=(
   "@playwright/mcp"
+  "@playwright/cli"
   "commitizen"
   "cz-emoji"
   "happy"
