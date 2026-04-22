@@ -2,6 +2,9 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
+-- Nerd Font
+vim.g.have_nerd_font = true
+
 -- Line numbers
 vim.opt.number = true
 vim.opt.relativenumber = true
