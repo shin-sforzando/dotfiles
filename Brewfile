@@ -120,6 +120,9 @@ brew "lnav"
 # Slightly unconventional command-line interface for markdownlint
 brew "markdownlint-cli2"
 
+# Dev tools version manager
+brew "mise"
+
 # CLI tool for saving complete web pages as a single HTML file
 brew "monolith"
 
@@ -207,7 +210,7 @@ brew "uncrustify"
 # Extremely fast Python package installer and resolver
 brew "uv"
 
-# hassle-free way to manage your JavaScript command-line tools
+# hassle-free way to manage your JavaScript command-line tools (remove after mise migration)
 brew "volta"
 
 # Tool for watching a path and runs a command

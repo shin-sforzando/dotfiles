@@ -450,9 +450,82 @@ chezmoi edit ~/.local/share/chezmoi/.chezmoiignore
 echo ".zshrc_local" >> ~/.local/share/chezmoi/.chezmoiignore
 ```
 
+## Volta から mise への移行
+
+Voltaの開発停止に伴い、Node.js バージョン管理を mise に移行します。
+約1週間の並行運用後に Volta を削除します。
+
+### 前提
+
+- `dot_zshrc` に mise activation が追加済み（Voltaより前に記述）
+- `~/.config/mise/config.toml` に `node = "lts"` が設定済み
+- Brewfile に `brew "mise"` が追加済み
+
+### Step 1: chezmoi apply で mise と npm グローバルパッケージをインストール
+
+```bash
+brew bundle --file=~/.local/share/chezmoi/Brewfile  # mise をインストール
+chezmoi apply                                        # dot_zshrc・mise設定を適用
+exec zsh                                             # シェルを再起動して mise を有効化
+mise install                                         # node LTS をインストール
+```
+
+> [!NOTE]
+> `exec zsh` 後の `chezmoi apply` で `run_onchange_install-npm-global-packages.sh` が自動実行され、
+> npm グローバルパッケージ（`@playwright/mcp`, `commitizen`, `cz-emoji`, `happy-coder`, `npm-check-updates`）がインストールされます。
+> パッケージの追加・削除は `.chezmoiscripts/run_onchange_install-npm-global-packages.sh` を編集してください。
+
+### Step 3: 動作確認（約1週間）
+
+```bash
+# バージョン確認
+node --version
+npm --version
+
+# 各コマンドの動作確認
+claude --version
+playwright-mcp --version
+cz --version
+ncu --version
+```
+
+- [ ] node / npm が mise 経由で動作している
+- [ ] claude (brew cask) が動作している
+- [ ] playwright-mcp が動作している
+- [ ] commitizen (`cz`) が動作している
+- [ ] ncu が動作している
+
+### Step 4: Volta の削除
+
+> [!WARNING]
+> Step 3 の動作確認がすべて完了してから実施してください。
+
+```bash
+# 1. dot_zshrc から Volta セクションを削除
+chezmoi edit ~/.zshrc
+# "## Volta (fallback during mise migration..." のブロックを削除
+
+# 2. chezmoi を適用
+chezmoi apply
+
+# 3. Brewfile から volta を削除
+chezmoi edit ~/.local/share/chezmoi/Brewfile
+# volta の行を削除
+
+# 4. Volta をアンインストール
+brew uninstall volta
+rm -rf ~/.volta
+
+# 5. 新しいシェルで確認
+exec zsh
+which node   # mise 管理のパスが返ること
+volta        # command not found になること
+```
+
 ## 参考リンク
 
 - [chezmoi公式ドキュメント](https://www.chezmoi.io/)
 - [Sheldon公式ドキュメント](https://sheldon.cli.rs/)
 - [Starship公式ドキュメント](https://starship.rs/)
 - [元のPrezto設定](https://github.com/shin-sforzando/prezto)
+- [mise公式ドキュメント](https://mise.jdx.dev/)

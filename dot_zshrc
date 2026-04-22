@@ -374,24 +374,20 @@ if (( $+commands[nvim] )); then
   export XDG_CONFIG_HOME="$HOME/.config"
 fi
 
-## Volta
+## Volta (fallback during mise migration — remove after migration completes)
 #
 if (( $+commands[volta] )); then
   export VOLTA_HOME="$HOME/.volta"
   export PATH="$VOLTA_HOME/bin:$PATH"
   volta completions --force --quiet zsh -o $PERSONAL_COMP_DIR/_volta
-
-  if (( $+commands[node] )); then
-    volta setup --quiet
-  fi
 fi
 
-## Bun
+## mise (must come after Volta so __MISE_ORIG_PATH includes Volta's bin, allowing mise to override it)
 #
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-# bun completions
-[ -s "/Users/suzuki/.bun/_bun" ] && source "/Users/suzuki/.bun/_bun"
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)"
+  mise completion zsh > $PERSONAL_COMP_DIR/_mise
+fi
 
 ## Visual Studio Code
 #

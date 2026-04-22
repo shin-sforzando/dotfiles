@@ -38,15 +38,6 @@ elif command -v pip3 &>/dev/null; then
   pip3 install --user pynvim
 fi
 
-# Volta: Install node and global packages
-if command -v volta &>/dev/null; then
-  echo "⚡ Installing node.js via Volta..."
-  volta install node
-
-  echo "📦 Installing global npm packages..."
-  npm install --global commitizen cz-emoji npm-check-updates
-fi
-
 # Create Workspace directory for ghq
 echo "📁 Creating Workspace directory..."
 mkdir -p "$HOME/Workspace"
