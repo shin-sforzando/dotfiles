@@ -52,9 +52,11 @@
 [core]
 	autocrlf = input
 	compression = -1
-	editor = nvim
+	editor = code --wait
 	pager = delta
 	excludesfile = ~/.gitignore
+[sequence]
+	editor = code --wait
 [diff]
 	colorMoved = default
 [interactive]
@@ -93,11 +95,9 @@
 [credential "https://github.com"]
 	useHttpPath = true
 {{- if eq .chezmoi.os "linux" }}
-	helper = 
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
 {{- end }}
 {{- if eq .chezmoi.os "linux" }}
 [credential "https://gist.github.com"]
-	helper = 
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
 {{- end }}
