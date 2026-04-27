@@ -224,6 +224,7 @@
         "vimcmd",
         "vimdoc",
         "virtualenv",
+        "wakatime",
         "watchexec",
         "wavebox",
         "winget",

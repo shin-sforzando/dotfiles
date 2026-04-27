@@ -37,7 +37,9 @@
   "enabledPlugins": {
     "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "claude-code-setup@claude-plugins-official": true,
+    "claude-code-wakatime@wakatime": true,
     "claude-md-management@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "explanatory-output-style@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
@@ -46,9 +48,7 @@
     "playwright@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-code-wakatime@wakatime": true
+    "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "chrome-devtools-plugins": {
