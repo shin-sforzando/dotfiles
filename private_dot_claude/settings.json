@@ -1,14 +1,43 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
   },
-  "autoUpdatesChannel": "stable",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/notify.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/scripts/context-bar.sh"
+  },
   "enabledPlugins": {
     "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "claude-code-setup@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "explanatory-output-style@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
@@ -17,47 +46,25 @@
     "playwright@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "superpowers@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-code-wakatime@wakatime": true
   },
   "extraKnownMarketplaces": {
     "chrome-devtools-plugins": {
       "source": {
-        "repo": "ChromeDevTools/chrome-devtools-mcp",
-        "source": "github"
+        "source": "github",
+        "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    },
+    "wakatime": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/wakatime/claude-code-wakatime.git"
       }
     }
   },
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "command": "~/.claude/scripts/notify.sh",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ]
-  },
   "language": "japanese",
-  "skipAutoPermissionPrompt": true,
-  "statusLine": {
-    "command": "~/.claude/scripts/context-bar.sh",
-    "type": "command"
-  }
+  "autoUpdatesChannel": "stable",
+  "skipAutoPermissionPrompt": true
 }
