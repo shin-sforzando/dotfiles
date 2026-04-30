@@ -20,7 +20,6 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
     - [Install Homebrew](#install-homebrew)
     - [Init with chezmoi](#init-with-chezmoi)
   - [Manual Steps](#manual-steps)
-- [Migration from Prezto](#migration-from-prezto)
 - [Daily Usage](#daily-usage)
   - [Update dotfiles](#update-dotfiles)
   - [Update Sheldon plugins](#update-sheldon-plugins)
@@ -105,19 +104,6 @@ atuin sync
 > [!NOTE]
 > The encryption key is stored in 1Password ("Atuin Key" item) and retrieved via the `op` CLI.
 > On the first machine, save your key to 1Password with: `atuin key | op item create --category Password --title "Atuin Key" --field "key[concealed]=$(cat)"`
-
-## Migration from Prezto
-
-If you're migrating from an existing [shin-sforzando/prezto](https://github.com/shin-sforzando/prezto) setup, please refer to the detailed migration guide:
-
-👉 **[MIGRATION.md](./MIGRATION.md)**
-
-The guide covers:
-
-- Step-by-step migration process
-- Important backup procedures
-- Common issues and solutions (.zprofile, history, etc.)
-- Rollback instructions if needed
 
 ## Daily Usage
 

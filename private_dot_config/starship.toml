@@ -122,13 +122,6 @@ symbol = ""
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
-# Temporary: show which tool manages node during Volta→mise migration (remove after migration)
-[custom.node_manager]
-command = "which node | grep -q mise && echo 'mise' || echo 'volta'"
-when = "true"
-style = "bg:green"
-format = '[[  $output ](fg:crust bg:green)]($style)'
-
 [c]
 symbol = " "
 style = "bg:green"

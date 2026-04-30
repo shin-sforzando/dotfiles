@@ -210,9 +210,6 @@ brew "uncrustify"
 # Extremely fast Python package installer and resolver
 brew "uv"
 
-# hassle-free way to manage your JavaScript command-line tools (remove after mise migration)
-brew "volta"
-
 # Tool for watching a path and runs a command
 brew "watchexec"
 
