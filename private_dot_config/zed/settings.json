@@ -7,39 +7,90 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
-  "tabs": {
-    "file_icons": true,
-    "git_status": true,
-  },
-  "title_bar": {
-    "show_branch_icon": true,
-  },
   "agent": {
-    "play_sound_when_agent_done": true,
+    "play_sound_when_agent_done": "always",
+    "show_turn_stats": true,
   },
-  "ui_font_family": "HackGen Console NF",
   "agent_servers": {
     "claude-acp": {
       "type": "registry",
     },
   },
   "buffer_font_family": "HackGen Console NF",
-  "telemetry": {
-    "diagnostics": true,
-    "metrics": false,
+  "cli_default_open_behavior": "new_window",
+  "experimental.theme_overrides": {
+    "background": "#333333cc",
+    "background.appearance": "transparent",
+    "editor.background": "#00000000",
   },
-  "session": {
-    "trust_all_worktrees": true,
-  },
-  "ui_font_size": 16,
-  "buffer_font_size": 15,
-  "theme": {
-    "mode": "system",
-    "light": "One Light",
-    "dark": "One Dark",
+  "format_on_save": "on",
+  "languages": {
+    "CSS": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "biome",
+        },
+      },
+    },
+    "JSON": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "biome",
+        },
+      },
+    },
+    "JavaScript": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "biome",
+        },
+      },
+    },
+    "Python": {
+      "code_actions_on_format": {
+        "source.fixAll.ruff": true,
+        "source.organizeImports.ruff": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "ruff",
+        },
+      },
+    },
+    "TSX": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "biome",
+        },
+      },
+    },
+    "TypeScript": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "biome",
+        },
+      },
+    },
   },
   "load_direnv": "shell_hook",
-  "format_on_save": "on",
   "lsp": {
     "biome": {
       "settings": {
@@ -47,70 +98,19 @@
       },
     },
   },
-  "languages": {
-    "Python": {
-      "formatter": {
-        "language_server": {
-          "name": "ruff",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.ruff": true,
-        "source.organizeImports.ruff": true,
-      },
-    },
-    "TypeScript": {
-      "formatter": {
-        "language_server": {
-          "name": "biome",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
-      },
-    },
-    "TSX": {
-      "formatter": {
-        "language_server": {
-          "name": "biome",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
-      },
-    },
-    "JavaScript": {
-      "formatter": {
-        "language_server": {
-          "name": "biome",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
-      },
-    },
-    "JSON": {
-      "formatter": {
-        "language_server": {
-          "name": "biome",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-      },
-    },
-    "CSS": {
-      "formatter": {
-        "language_server": {
-          "name": "biome",
-        },
-      },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-      },
-    },
+  "minimap": {
+    "show": "auto",
   },
+  "session": {
+    "trust_all_worktrees": true,
+  },
+  "soft_wrap": "prefer_line",
+  "tabs": {
+    "file_icons": true,
+    "git_status": true,
+  },
+  "title_bar": {
+    "show_branch_status_icon": true,
+  },
+  "ui_font_family": "HackGen Console NF",
 }
