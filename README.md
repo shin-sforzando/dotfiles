@@ -236,8 +236,6 @@ For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.
 - [chezmoi-specific problems](./TROUBLESHOOTING.md#chezmoi)
 - [GPG/SSH/YubiKey setup](./TROUBLESHOOTING.md#gpgsshyubikey)
 
-**Migrating from Prezto?** See [MIGRATION.md](./MIGRATION.md) for migration-specific troubleshooting.
-
 ## References
 
 - [chezmoi](https://www.chezmoi.io) - Manage your dotfiles across multiple machines
