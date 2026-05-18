@@ -5,7 +5,6 @@
   },
   "autoUpdatesChannel": "stable",
   "enabledPlugins": {
-    "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "claude-code-wakatime@wakatime": true,
@@ -26,12 +25,6 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "extraKnownMarketplaces": {
-    "chrome-devtools-plugins": {
-      "source": {
-        "repo": "ChromeDevTools/chrome-devtools-mcp",
-        "source": "github"
-      }
-    },
     "wakatime": {
       "source": {
         "source": "git",
