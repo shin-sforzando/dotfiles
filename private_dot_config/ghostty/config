@@ -58,4 +58,3 @@ keybind = global:cmd+backquote=toggle_quick_terminal
 # Quick Terminal
 
 quick-terminal-position = center
-quick-terminal-size = 90%,90%
