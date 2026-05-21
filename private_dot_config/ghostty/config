@@ -13,7 +13,6 @@ clipboard-trim-trailing-spaces = true
 copy-on-select = true
 
 # Disable automatic shell integration injection
-
 # We manually load it in .zshrc to ensure correct hook order
 
 shell-integration = none
@@ -28,7 +27,6 @@ background-opacity = 0.75
 background-opacity-cells = true
 
 # unfocused-split-opacity = 0.5
-
 # unfocused-split-fill = #000000
 
 split-divider-color = #cccccc
@@ -52,3 +50,12 @@ macos-option-as-alt = left
 # Newline for Coding Assistant
 
 keybind = shift+enter=text:\n
+
+# Toggle Quick Terminal
+
+keybind = global:cmd+backquote=toggle_quick_terminal
+
+# Quick Terminal
+
+quick-terminal-position = center
+quick-terminal-size = 90%,90%
