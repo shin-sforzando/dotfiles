@@ -1,4 +1,5 @@
 {
+  "agentPushNotifEnabled": true,
   "attribution": {
     "commit": "",
     "pr": ""
@@ -56,11 +57,14 @@
       }
     ]
   },
+  "inputNeededNotifEnabled": true,
   "language": "japanese",
   "permissions": {
     "defaultMode": "plan"
   },
   "plansDirectory": ".claude/plans",
+  "preferredNotifChannel": "auto",
+  "remoteControlAtStartup": true,
   "skipAutoPermissionPrompt": true,
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
