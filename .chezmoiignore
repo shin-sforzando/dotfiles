@@ -39,3 +39,6 @@ TROUBLESHOOTING.md
 # Brewfile stays in chezmoi source directory only
 # Avoid accidental edits in HOME directory
 Brewfile
+
+# Git
+.gitignore

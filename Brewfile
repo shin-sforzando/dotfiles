@@ -1,6 +1,5 @@
 ## Add Homebrew tap
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
-tap "satococoa/tap"
 
 ## Install Packages
 # The magical shell history
@@ -123,6 +122,9 @@ brew "markdownlint-cli2"
 # Dev tools version manager
 brew "mise"
 
+# Markdown viewer; https://github.com/k1LoW/mo
+brew "k1LoW/tap/mo"
+
 # CLI tool for saving complete web pages as a single HTML file
 brew "monolith"
 
@@ -216,8 +218,8 @@ brew "watchexec"
 # Internet file retriever
 brew "wget"
 
-# Git worktree manager with automatic path generation and hooks
-brew "wtp"
+# Git worktree manager with automatic path generation and hooks; https://github.com/satococoa/wtp
+brew "satococoa/tap/wtp"
 
 # Blazing fast terminal file manager written in Rust
 brew "yazi"
