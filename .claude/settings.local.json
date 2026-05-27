@@ -12,7 +12,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:starship.rs)",
       "WebFetch(domain:zed.dev)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:cmux.com)",
+      "Read(//private/tmp/**)"
     ]
   }
 }

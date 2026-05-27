@@ -261,6 +261,9 @@ if OS.mac?
   cask "claude"
   cask "claude-code"
 
+  # The terminal built for multitasking LLM
+  cask "cmux"
+
   # Application containers platform
   cask "docker-desktop"
 
