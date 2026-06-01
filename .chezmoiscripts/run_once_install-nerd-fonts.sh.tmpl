@@ -5,8 +5,10 @@ set -eufo pipefail
 echo "🔤 Installing Nerd Fonts (Mononoki, Noto)..."
 
 if command -v brew &>/dev/null; then
+  brew install --cask font-hackgen-nerd
   brew install --cask font-mononoki-nerd-font
   brew install --cask font-noto-nerd-font
+  brew install --cask font-udev-gothic-nf
 else
   echo "❌ Homebrew not found. Please install Homebrew first."
   exit 1

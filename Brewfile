@@ -283,6 +283,7 @@ if OS.mac?
   cask "font-genshingothic"
   cask "font-hackgen-nerd"
   cask "font-mononoki-nerd-font"
+  cask "font-udev-gothic-nf"
 
   # Terminal emulator that uses platform-native UI and GPU acceleration
   cask "ghostty"
