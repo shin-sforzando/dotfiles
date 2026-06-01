@@ -246,6 +246,9 @@ if OS.mac?
   brew "mas"                # Mac App Store CLI interface
   brew "terminal-notifier"  # Send macOS User Notifications from the CLI
 
+  # Window border tool for macOS; https://github.com/FelixKratz/JankyBorders
+  brew "FelixKratz/formulae/borders"
+
   ## Install Cask Packages
   # Password manager
   cask "1password"
