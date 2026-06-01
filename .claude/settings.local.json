@@ -17,7 +17,8 @@
       "Read(//private/tmp/**)",
       "Bash(chezmoi state *)",
       "Bash(mise current *)",
-      "Bash(mise ls *)"
+      "Bash(mise ls *)",
+      "Bash(gh run *)"
     ]
   }
 }

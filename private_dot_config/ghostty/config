@@ -1,9 +1,11 @@
 # Font and appearance
 
 font-family = "Mononoki Nerd Font Mono Regular"
+font-family = "HackGen Console NF"
+font-family = "Menlo"
 font-size = 14
 font-thicken = true
-window-title-font-family = "Mononoki Nerd Font Mono Regular"
+window-title-font-family = "HackGen Console NF"
 macos-titlebar-style = tabs
 macos-option-as-alt = true
 

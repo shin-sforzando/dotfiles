@@ -1,5 +1,5 @@
 #!/bin/bash
-# active-node: {{ output "mise" "current" "node" | trim }}
+# active-node: {{ with lookPath "mise" }}{{ output . "current" "node" | trim }}{{ end }}
 
 set -eufo pipefail
 
