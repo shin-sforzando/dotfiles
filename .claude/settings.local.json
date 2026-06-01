@@ -14,7 +14,10 @@
       "WebFetch(domain:zed.dev)",
       "WebSearch",
       "WebFetch(domain:cmux.com)",
-      "Read(//private/tmp/**)"
+      "Read(//private/tmp/**)",
+      "Bash(chezmoi state *)",
+      "Bash(mise current *)",
+      "Bash(mise ls *)"
     ]
   }
 }
