@@ -1,5 +1,6 @@
-## Add Homebrew tap
+## Add Homebrew taps
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
+tap "satococoa/tap"
 
 ## Install Packages
 # The magical shell history

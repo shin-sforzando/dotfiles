@@ -2,6 +2,9 @@
 
 set -eufo pipefail
 
+# Re-run this script whenever the Brewfile changes:
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+
 echo "📦 Installing packages..."
 
 # Homebrew / Linuxbrew installation check
@@ -10,15 +13,24 @@ if ! command -v brew &>/dev/null; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Pre-tap repositories (workaround for Linuxbrew tap ordering issue)
-echo "🔧 Adding Homebrew taps..."
-brew tap rhysd/hgrep https://github.com/rhysd/hgrep || true
-brew tap satococoa/tap || true
-
-# Install packages from Brewfile
+# Install packages from Brewfile (taps are declared in the Brewfile itself)
 # Use CHEZMOI_SOURCE_DIR since dotfiles haven't been applied yet
 BREWFILE="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}/Brewfile"
 if [ -f "$BREWFILE" ]; then
+  # Trust non-official taps referenced in the Brewfile before bundling,
+  # since Homebrew refuses to load untrusted taps when HOMEBREW_REQUIRE_TAP_TRUST is set.
+  echo "🔐 Trusting non-official taps from Brewfile..."
+  while IFS= read -r tap; do
+    [ -n "$tap" ] && brew trust --tap "$tap"
+  done < <(
+    {
+      grep -E '^[[:space:]]*tap[[:space:]]+"' "$BREWFILE" \
+        | sed -E 's/^[[:space:]]*tap[[:space:]]+"([^"]+)".*/\1/'
+      grep -E '^[[:space:]]*(brew|cask)[[:space:]]+"[^"]+/[^"]+/[^"]+"' "$BREWFILE" \
+        | sed -E 's#^[[:space:]]*(brew|cask)[[:space:]]+"([^"/]+/[^"/]+)/[^"]+".*#\2#'
+    } | tr '[:upper:]' '[:lower:]' | sort -u
+  )
+
   echo "📦 Installing Homebrew packages..."
   brew bundle --file="$BREWFILE"
 fi
