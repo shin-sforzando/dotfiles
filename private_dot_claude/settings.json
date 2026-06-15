@@ -57,7 +57,7 @@
       {
         "hooks": [
           {
-            "command": "\"/Users/suzuki/.claude/hooks/context-mode-cache-heal.mjs\"",
+            "command": "~/.claude/hooks/context-mode-cache-heal.mjs",
             "type": "command"
           }
         ]
@@ -78,7 +78,6 @@
   "inputNeededNotifEnabled": true,
   "language": "japanese",
   "permissions": {
-    "defaultMode": "plan",
     "allow": [
       "Bash(gh *)",
       "Bash(git add *)",
@@ -103,7 +102,8 @@
       "mcp__plugin_figma_figma__*",
       "WebFetch",
       "WebSearch"
-    ]
+    ],
+    "defaultMode": "plan"
   },
   "plansDirectory": ".claude/plans",
   "preferredNotifChannel": "auto",
