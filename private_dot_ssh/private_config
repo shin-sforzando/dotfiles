@@ -1,0 +1,46 @@
+# Managed by chezmoi (private_dot_ssh/private_config -> ~/.ssh/config, 0600)
+# Read more about SSH config files: https://linux.die.net/man/5/ssh_config
+
+Host *
+  IgnoreUnknown UseKeychain
+  AddKeysToAgent yes
+  UseKeychain yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+# === Tailscale SSH (keyless) ===
+# These hosts authenticate via Tailscale node identity (auth method `none`).
+# `ssh <host>` works without a key once `tailscale up --ssh` is enabled on the destination.
+Host macstudio
+  HostName macstudio.taile7dbc.ts.net
+  User suzuki
+
+Host m2-macbook-air
+  HostName m2-macbook-air.taile7dbc.ts.net
+  User suzuki
+
+Host ds77u
+  HostName ds77u.taile7dbc.ts.net
+  User suzuki
+
+Host greeng1
+  HostName greeng1.taile7dbc.ts.net
+  User suzuki
+
+Host vivomini
+  HostName vivomini.taile7dbc.ts.net
+  User suzuki
+
+# === Over Tailscale, QNAP stock sshd (Tailscale SSH server unsupported on QNAP) ===
+# Reaches the NAS over the tailnet; auth is password today, key auth is optional hardening.
+Host qnap-lc402
+  HostName qnap-lc402.taile7dbc.ts.net
+  User suzuki
+  # IdentityFile ~/.ssh/id_ed25519   # enable once a key is registered in QNAP authorized_keys
+
+# === Non-Tailscale: ValueServer shared hosting (password auth today, mosh-capable) ===
+# Password is entered interactively — never store it in this repo.
+Host e7.valueserver.jp
+  HostName e7.valueserver.jp
+  User hayashi
+  # IdentityFile ~/.ssh/id_ed25519   # enable if you set up SSH key auth on ValueServer

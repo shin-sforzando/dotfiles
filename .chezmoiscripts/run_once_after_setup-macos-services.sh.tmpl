@@ -1,0 +1,30 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+echo "🔧 Setting up macOS services..."
+
+# =============================================================================
+# Tailscale (OSS tailscaled via Homebrew formula)
+# The GUI build does not support the Tailscale SSH server, so we run the formula
+# as a root service. Networking (utun) requires root, hence sudo — mirroring the
+# sudo usage in run_once_after_setup-linux-services.sh.tmpl.
+# =============================================================================
+if brew list tailscale &>/dev/null; then
+  echo "🔗 Enabling tailscaled service (root, restart at login)..."
+  # Idempotent: re-running when already started just reports "already started".
+  sudo brew services start tailscale
+  echo "✅ tailscaled service enabled"
+else
+  echo "⚠️  tailscale formula not installed (check Brewfile), skipping service setup"
+fi
+
+echo ""
+echo "🔐 Manual step required (browser authentication):"
+echo "   sudo tailscale up --ssh"
+echo "   # re-mention existing non-default flags (e.g. --accept-routes) or 'tailscale up' will refuse"
+echo ""
+
+echo "✅ macOS services setup completed!"
+{{- end }}

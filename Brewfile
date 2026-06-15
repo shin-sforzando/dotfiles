@@ -265,6 +265,9 @@ if OS.mac?
   cask "claude"
   cask "claude-code@latest"
 
+  # Menu bar app for AI assistants; https://github.com/tddworks/ClaudeBar
+  cask "claudebar"
+
   # The terminal built for multitasking LLM
   cask "cmux"
 
@@ -316,8 +319,9 @@ if OS.mac?
   # Database management tool
   cask "tableplus"
 
-  # # Mesh VPN and secure network
-  # cask "tailscale"
+  # Mesh VPN and secure network (OSS tailscaled: CLI + daemon, supports Tailscale SSH server)
+  brew "tailscale"
+  # cask "tailscale"  # GUI build does not support the Tailscale SSH server, so we use the formula
 
   # File transfer client
   cask "transmit"
