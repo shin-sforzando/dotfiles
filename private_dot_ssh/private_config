@@ -20,7 +20,7 @@ Host macstudio
   User suzuki
 
 Host m2-macbook-air
-  HostName 100.120.146.64          # m2-macbook-air.taile7dbc.ts.net
+  HostName 100.118.81.61           # m2-macbook-air.taile7dbc.ts.net
   User suzuki
 
 Host ds77u
