@@ -78,7 +78,32 @@
   "inputNeededNotifEnabled": true,
   "language": "japanese",
   "permissions": {
-    "defaultMode": "plan"
+    "defaultMode": "plan",
+    "allow": [
+      "Bash(gh *)",
+      "Bash(git add *)",
+      "Bash(git blame *)",
+      "Bash(git branch *)",
+      "Bash(git commit *)",
+      "Bash(git describe *)",
+      "Bash(git diff *)",
+      "Bash(git fetch *)",
+      "Bash(git log *)",
+      "Bash(git remote *)",
+      "Bash(git rev-parse *)",
+      "Bash(git show *)",
+      "Bash(git stash *)",
+      "Bash(git status *)",
+      "Bash(git switch *)",
+      "LSP",
+      "mcp__playwright__*",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__*",
+      "mcp__plugin_context-mode_context-mode__*",
+      "mcp__plugin_context7_context7__*",
+      "mcp__plugin_figma_figma__*",
+      "WebFetch",
+      "WebSearch"
+    ]
   },
   "plansDirectory": ".claude/plans",
   "preferredNotifChannel": "auto",

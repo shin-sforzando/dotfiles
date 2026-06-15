@@ -263,7 +263,7 @@ if OS.mac?
 
   # AI assistant desktop app
   cask "claude"
-  cask "claude-code"
+  cask "claude-code@latest"
 
   # The terminal built for multitasking LLM
   cask "cmux"
