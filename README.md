@@ -99,6 +99,16 @@ gpg --edit-key KEYID
 # 3. Log in to Atuin for shell history sync
 atuin login --key "$(op read "op://Personal/Atuin Key/key")"
 atuin sync
+
+# 4. Set up Tailscale SSH
+# macOS: if a GUI Tailscale.app was installed, uninstall it first (and remove
+#        its System Extension) so OSS tailscaled (from Brewfile) owns the TUN.
+#        The macOS services script auto-runs `brew services start tailscale`.
+# Advertise Tailscale SSH (browser auth; re-mention existing non-default flags):
+sudo tailscale up --ssh
+# Tip: set the SSH rule (autogroup:member -> autogroup:self) to action:accept
+#      in the admin console to skip the periodic check-mode re-auth.
+# Pitfalls: see TROUBLESHOOTING.md "Tailscale / SSH".
 ```
 
 > [!NOTE]
@@ -185,9 +195,14 @@ This repository manages configurations for the following applications:
 | **Sheldon**  | Fast Zsh plugin manager                 | `~/.config/sheldon/`                       |
 | **topgrade** | System update manager                   | `~/.config/topgrade.toml`                  |
 | **Atuin**    | Shell history sync (E2E encrypted)      | `~/.config/atuin/`                         |
+| **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
 
 > [!NOTE]
 > Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
+>
+> SSH uses [Tailscale SSH](https://tailscale.com/kb/1193/tailscale-ssh) (keyless, by
+> Tailscale node identity). `HostName` entries use Tailscale IPs (100.x) instead of
+> MagicDNS names — see [Troubleshooting](./TROUBLESHOOTING.md#tailscale--ssh) for why.
 
 ### Sheldon Plugins
 

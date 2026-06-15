@@ -32,6 +32,13 @@
   - [GPGキーの設定](#gpgキーの設定)
   - [SSH認証が機能しない](#ssh認証が機能しない)
   - [gpg-agentの再起動](#gpg-agentの再起動)
+- [Tailscale / SSH](#tailscale--ssh)
+  - [GUIアプリ削除後にSSHがタイムアウトする](#guiアプリ削除後にsshがタイムアウトする)
+  - [MagicDNS名が解決しない（macOS）](#magicdns名が解決しないmacos)
+  - [tailscale upが設定変更を拒否する](#tailscale-upが設定変更を拒否する)
+  - [SSH接続のたびに再認証を求められる](#ssh接続のたびに再認証を求められる)
+  - [SSH先でxterm-ghostty terminfoエラーが出る](#ssh先でxterm-ghostty-terminfoエラーが出る)
+  - [QNAPでTailscale SSHが使えない](#qnapでtailscale-sshが使えない)
 - [通知システム（Claude Code連携）](#通知システムclaude-code連携)
   - [通知が表示されない（macOS）](#通知が表示されないmacos)
   - [通知が表示されない（Linux）](#通知が表示されないlinux)
@@ -527,6 +534,109 @@ exec zsh
 # 手動で起動する場合
 gpg-agent --daemon --enable-ssh-support
 ```
+
+## Tailscale / SSH
+
+SSH接続はTailscale SSH（WireGuardのノードIDで認証、鍵レス）を主軸にしている。設定は
+`~/.ssh/config`（`private_dot_ssh/private_config`）で管理し、`HostName` には MagicDNS名ではなく
+Tailscale IP（100.x）を使う（理由は後述）。macOSは **オープンソース版 tailscaled（Homebrew formula）** を使う。
+
+### GUIアプリ削除後にSSHがタイムアウトする
+
+**症状**: macOSでGUI版TailscaleをアンインストールしOSS版に移行した後、`tailscale ping` は通るのに
+`ssh <host>` が `Operation timed out` になる（outbound TCPだけ失敗）。
+
+**原因**: 旧GUI版の **ネットワークSystem Extensionが残存**し、OSS版 tailscaled と二重稼働している。
+
+**解決方法:**
+
+```bash
+# 残骸を確認
+systemextensionsctl list | grep tailscale
+
+# 残っていたら除去（再起動でorphan拡張が消えることが多い）。確実なのは再起動。
+sudo reboot
+
+# 再起動後もOSS版サービスを起動し直す
+sudo brew services restart tailscale
+sudo tailscale up --ssh
+```
+
+> 教訓: GUI版→OSS版へ移行する際は、.app を消す前に standalone 版アプリの正規アンインストールで
+> System Extension も解除しておく。
+
+### MagicDNS名が解決しない（macOS）
+
+**症状**: `ssh host.taile7dbc.ts.net` が `Could not resolve hostname` になる。`nslookup host... 100.100.100.100`
+では正しく解決する。
+
+**原因**: OSS版 tailscaled on macOS は `/etc/resolver` に **search domain しか登録せず**、MagicDNS
+リゾルバ（100.100.100.100）への振り分けを張らないことがある。
+
+**解決方法**: ssh config の `HostName` を **Tailscale IP（100.x）** にする（このリポジトリはこの方式）。
+
+```bash
+# 各ホストのTailscale IPを確認
+tailscale ip <host>
+tailscale status
+```
+
+### tailscale upが設定変更を拒否する
+
+**症状**: `tailscale up --ssh` 実行時に `requires mentioning all non-default flags` エラー。
+
+**原因**: `tailscale up` は既存の非デフォルト設定をすべて再明示しないと上書きを拒否する。
+
+**解決方法:**
+
+```bash
+# 既存の非デフォルトフラグを確認
+tailscale debug prefs
+
+# 既存フラグ（例: --accept-routes）を併記して実行
+sudo tailscale up --ssh --accept-routes
+# または現行設定をリセット（他の非デフォルト設定も消える点に注意）
+sudo tailscale up --ssh --reset
+```
+
+### SSH接続のたびに再認証を求められる
+
+**症状**: 自分の端末同士のSSHでも、約12時間ごとにブラウザでの再認証を求められる。
+
+**原因**: Tailscaleのデフォルトの SSH ACL は **check モード**（定期的な再認証）。
+
+**解決方法**: 管理コンソール → Access controls の SSHルール（`src: autogroup:member` → `dst: autogroup:self`）の
+**Check mode を Off**（`action: check` → `accept`）にする。反映確認:
+
+```bash
+tailscale debug netmap | grep -i holdAndDelegate   # 消えていればaccept
+```
+
+### SSH先でxterm-ghostty terminfoエラーが出る
+
+**症状**: SSH接続時に `tput: unknown terminal "xterm-ghostty"` が複数行出る、入力が不安定。
+
+**原因**: GhosttyはSSH先へ `TERM=xterm-ghostty` を送るが、リモートにその terminfo が無い。
+
+**解決方法**: Ghostty設定（`~/.config/ghostty/config`）で公式のSSH統合機能を有効化する。
+
+```ini
+# shell-integration = none のままでOK（GHOSTTY_SHELL_FEATURES経由で効く）
+shell-integration-features = cursor,no-sudo,title,ssh-env,ssh-terminfo,path
+```
+
+- SSH時に `xterm-ghostty` terminfo を自動導入し、`tic` の無いホストでは `xterm-256color` にフォールバック。
+- 反映には Ghostty の設定リロード（⌘⇧,）＋新規ウィンドウ、または再起動が必要
+  （`echo $GHOSTTY_SHELL_FEATURES` に `ssh-env`・`ssh-terminfo` が出れば有効）。
+
+### QNAPでTailscale SSHが使えない
+
+**症状**: QNAP上で `tailscale up --ssh` が `The Tailscale SSH server does not run on QNAP.` で失敗。
+
+**原因**: QNAPのTailscaleパッケージは Tailscale SSH サーバ機能を含まない。
+
+**解決方法**: QNAPは **Tailscale経由＋標準sshd**（パスワードまたはSSH鍵）で接続する。ssh config の
+`HostName` は Tailscale IP のまま、認証だけ従来方式にする。
 
 ## 通知システム（Claude Code連携）
 
