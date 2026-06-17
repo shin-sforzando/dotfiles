@@ -5,3 +5,5 @@ words = ["sforzando", "suzuki", "kashimada", "nishigauchi", "kanagawa"]
 flag_words = ["todo", "fixme", "xxx"]
 
 ignore_paths = ["node_modules/**", ".venv/**", "dist/**", "build/**", "public/**", "vendor/**"]
+
+use_global = true

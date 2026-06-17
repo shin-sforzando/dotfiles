@@ -11,6 +11,9 @@
 !.claude/scripts/
 !.claude/commands/
 
+# Codebook
+codebook.toml
+
 # Zsh runtime files
 .zsh_history
 .zsh_sessions/

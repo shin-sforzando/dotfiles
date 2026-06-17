@@ -138,6 +138,9 @@ brew "mtr"
 # An interactive cheatsheet tool for the CLI and application launchers
 brew "navi"
 
+#Network forensics that fits in your terminal
+brew "matthart1983/tap/netwatch"
+
 # NCurses Disk Usage
 brew "ncdu"
 
@@ -312,6 +315,9 @@ if OS.mac?
 
   # Launcher and productivity tool
   cask "raycast"
+
+  # The Ultimate CSV Editor
+  cask "smoothcsv"
 
   # Inspect macOS installer packages
   cask "suspicious-package"
