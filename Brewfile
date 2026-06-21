@@ -108,6 +108,9 @@ brew "imagemagick"
 # Lightweight and flexible CLI JSON processor
 brew "jq"
 
+# Terminal Markdown previewer; https://github.com/rivolink/leaf
+brew "leaf-md"
+
 # The fastest polyglot Git hooks manager out there
 brew "lefthook"
 

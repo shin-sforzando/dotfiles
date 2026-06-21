@@ -61,10 +61,8 @@ macos-option-as-alt = left
 
 keybind = shift+enter=text:\n
 
-# Toggle Quick Terminal
-
-keybind = global:cmd+backquote=toggle_quick_terminal
-
 # Quick Terminal
 
 quick-terminal-position = center
+
+keybind = global:cmd+backquote=toggle_quick_terminal
