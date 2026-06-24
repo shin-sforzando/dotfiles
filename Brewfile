@@ -304,6 +304,9 @@ if OS.mac?
   # GPG Suite without Mail plugin
   cask "gpg-suite-no-mail"
 
+  # Find keyboard shortcut conflicts; https://github.com/wunderlandmedia/hotkeyclash
+  cask "wunderlandmedia/tap/hotkeyclash"
+
   # Image optimization tool
   cask "imageoptim"
 
