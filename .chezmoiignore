@@ -10,6 +10,7 @@
 !.claude/settings.json
 !.claude/scripts/
 !.claude/commands/
+!.claude/CLAUDE.md
 
 # Codebook
 codebook.toml
