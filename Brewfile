@@ -21,6 +21,9 @@ brew "bottom"
 # Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
 
+# Reviewer for Coding Assistant; https://crit.md
+brew "crit"
+
 # A tool that allows any two computers to simply and securely transfer files.
 brew "croc"
 

@@ -8,6 +8,17 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   "agent": {
+    "commit_message_instructions": "Follow the cz-emoji convention: `<type>: <:emoji-code:> <subject>`. Allowed types and emoji codes: feat :sparkles:, fix :bug:, wip :construction:, chore :paperclip:, style :art:, docs :notebook:, perf :zap:, refactor :bulb:, test :100:, release :tada:. Do not include a scope. Keep the subject 72 characters or fewer. Write the emoji as its text code (e.g. :sparkles:).",
+    "commit_message_model": {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+    },
+    "default_model": {
+      "provider": "anthropic",
+      "model": "claude-opus-4-8",
+      "enable_thinking": true,
+      "effort": "high",
+    },
     "play_sound_when_agent_done": "always",
     "show_turn_stats": true,
   },
@@ -104,7 +115,7 @@
   "session": {
     "trust_all_worktrees": true,
   },
-  "soft_wrap": "prefer_line",
+  "soft_wrap": "none",
   "tabs": {
     "file_icons": true,
     "git_status": true,
