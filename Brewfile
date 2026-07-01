@@ -1,6 +1,7 @@
 ## Add Homebrew taps
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 tap "satococoa/tap"
+tap "sheeki03/tap"
 
 ## Install Packages
 # The magical shell history
@@ -206,6 +207,9 @@ brew "thefuck"
 
 # Text interface for Git repositories
 brew "tig"
+
+# Terminal security guard; inspects commands before execution (https://tirith.sh)
+brew "tirith"
 
 # Keeping your system up to date mostly involves invoking more than a single package manager
 brew "topgrade"

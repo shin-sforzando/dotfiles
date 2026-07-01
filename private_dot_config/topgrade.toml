@@ -137,6 +137,10 @@ cleanup = true
 # Commands to run after anything
 [post_commands]
 # "Emacs Snapshot" = "rm -rf ~/.emacs.d/elpa.bak && cp -rl ~/.emacs.d/elpa ~/.emacs.d/elpa.bak"
+# Refresh the version-specific tirith Claude Code hook script after brew upgrades the binary.
+# chezmoi runs first (see [misc] first = ["chezmoi"]), so the chezmoi run_onchange sees the
+# pre-upgrade version and cannot refresh it in the same run; --update-configs is idempotent.
+"Refresh tirith Claude Code hook" = "command -v tirith >/dev/null 2>&1 && tirith setup claude-code --update-configs --scope user --quiet || true"
 
 # Custom commands
 [commands]
