@@ -7,6 +7,15 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "terminal": {
+    "toolbar": {
+      "breadcrumbs": false
+    },
+    "copy_on_select": true,
+    "cursor_shape": "block",
+    "font_size": 14.0,
+    "font_family": "UDEV Gothic 35NF"
+  },
   "agent": {
     "commit_message_instructions": "Follow the cz-emoji convention: `<type>: <:emoji-code:> <subject>`. Allowed types and emoji codes: feat :sparkles:, fix :bug:, wip :construction:, chore :paperclip:, style :art:, docs :notebook:, perf :zap:, refactor :bulb:, test :100:, release :tada:. Do not include a scope. Keep the subject 72 characters or fewer. Write the emoji as its text code (e.g. :sparkles:).",
     "commit_message_model": {
