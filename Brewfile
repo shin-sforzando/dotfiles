@@ -100,6 +100,9 @@ brew "grex"
 # A post-modern modal text editor written in Rust
 brew "helix"
 
+# Agent multiplexer that lives in your terminal; https://herdr.dev
+brew "herdr"
+
 # Simple hex viewer
 brew "hexyl"
 
