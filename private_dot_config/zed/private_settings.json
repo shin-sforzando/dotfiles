@@ -7,6 +7,10 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "icon_theme": "Catppuccin Mocha",
+  "theme": "Catppuccin Mocha - No Italics",
+  "buffer_line_height": "standard",
+  "ui_font_size": 16.0,
   "agent": {
     "commit_message_instructions": "Follow the cz-emoji convention: `<type>: <:emoji-code:> <subject>`. Allowed types and emoji codes: feat :sparkles:, fix :bug:, wip :construction:, chore :paperclip:, style :art:, docs :notebook:, perf :zap:, refactor :bulb:, test :100:, release :tada:. Do not include a scope. Keep the subject 72 characters or fewer. Write the emoji as its text code (e.g. :sparkles:).",
     "commit_message_model": {
@@ -33,6 +37,13 @@
     "background": "#333333cc",
     "background.appearance": "transparent",
     "editor.background": "#00000000",
+    "editor.gutter.background": "#00000000",
+    "tab_bar.background": "#00000000",
+    "panel.background": "#00000000",
+    "scrollbar.track.background": "#00000000",
+    "status_bar.background": "#00000000",
+    "toolbar.background": "#00000000",
+    "terminal.background": "#00000000",
   },
   "format_on_save": "on",
   "languages": {
@@ -122,7 +133,7 @@
   },
   "terminal": {
     "toolbar": {
-      "breadcrumbs": false
+      "breadcrumbs": false,
     },
     "copy_on_select": true,
     "cursor_shape": "block",
