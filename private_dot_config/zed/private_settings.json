@@ -36,6 +36,7 @@
   "experimental.theme_overrides": {
     "background": "#333333cc",
     "background.appearance": "transparent",
+    "border": "#99999999",
     "editor.background": "#00000000",
     "editor.gutter.background": "#00000000",
     "tab_bar.background": "#00000000",
@@ -126,7 +127,7 @@
   "session": {
     "trust_all_worktrees": true,
   },
-  "soft_wrap": "none",
+  "soft_wrap": "editor_width",
   "tabs": {
     "file_icons": true,
     "git_status": true,
