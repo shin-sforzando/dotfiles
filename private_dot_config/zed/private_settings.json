@@ -7,12 +7,8 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
-  "indent_guides": {
-    "background_coloring": "indent_aware",
-    "coloring": "indent_aware"
-  },
-  "icon_theme": "Catppuccin Mocha",
   "theme": "Catppuccin Mocha - No Italics",
+  "icon_theme": "Catppuccin Mocha",
   "buffer_line_height": "standard",
   "ui_font_size": 16.0,
   "agent": {
@@ -51,6 +47,10 @@
     "terminal.background": "#00000000",
   },
   "format_on_save": "on",
+  "indent_guides": {
+    "background_coloring": "indent_aware",
+    "coloring": "indent_aware"
+  },
   "languages": {
     "CSS": {
       "code_actions_on_format": {
