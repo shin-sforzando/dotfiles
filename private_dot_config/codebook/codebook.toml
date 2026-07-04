@@ -2,7 +2,7 @@ dictionaries = ["en_us"]
 
 words = ["sforzando", "suzuki", "kashimada", "nishigauchi", "kanagawa"]
 
-flag_words = ["todo", "fixme", "xxx"]
+flag_words = []
 
 ignore_paths = ["node_modules/**", ".venv/**", "dist/**", "build/**", "public/**", "vendor/**"]
 
