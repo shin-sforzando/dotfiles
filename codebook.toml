@@ -1,3 +1,3 @@
-words = ["acp", "atuin", "catppuccin", "chezmoi", "cli", "dsl", "fzf", "gpgconf", "homebrew", "libnotify", "linuxbrew", "neovim", "nvim", "prezto", "ripgrep", "starship", "worktrees", "yazi"]
+words = ["acp", "atuin", "catppuccin", "chezmoi", "cli", "dsl", "figma", "fzf", "gpgconf", "homebrew", "libnotify", "linuxbrew", "mcp", "neovim", "nvim", "prezto", "ripgrep", "starship", "worktrees", "yazi"]
 
 use_global = true
