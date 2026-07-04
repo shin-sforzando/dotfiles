@@ -297,5 +297,7 @@
       "zpreztorc",
       "zprof",
       "zxgrep"
-    ]
+    ],
+    "snyk.advanced.organization": "ff2f8893-cd9c-4a6a-be9a-4e081966d881",
+    "snyk.advanced.autoSelectOrganization": true
 }

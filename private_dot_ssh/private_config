@@ -23,6 +23,10 @@ Host m2-macbook-air
   HostName 100.118.81.61           # m2-macbook-air.taile7dbc.ts.net
   User suzuki
 
+Host m5-mba
+  HostName 100.106.171.57          # m5-mba.taile7dbc.ts.net
+  User suzuki
+
 Host ds77u
   HostName 100.91.199.82           # ds77u.taile7dbc.ts.net
   User suzuki
