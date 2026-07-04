@@ -7,6 +7,10 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "indent_guides": {
+    "background_coloring": "indent_aware",
+    "coloring": "indent_aware"
+  },
   "icon_theme": "Catppuccin Mocha",
   "theme": "Catppuccin Mocha - No Italics",
   "buffer_line_height": "standard",
