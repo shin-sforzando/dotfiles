@@ -428,22 +428,10 @@ if (( $+commands[starship] )); then
   eval "$(starship init zsh)"
 fi
 
-## tirith: Terminal security guard
-# See: https://tirith.sh
-if (( $+commands[tirith] )); then
-  eval "$(tirith init --shell zsh)"
-fi
-
 ## Ghostty Shell Integration
 # See: https://ghostty.org/docs/shell-integration
 if [[ -n $GHOSTTY_RESOURCES_DIR ]] && [[ -f "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration" ]]; then
   source "$GHOSTTY_RESOURCES_DIR"/shell-integration/zsh/ghostty-integration
-fi
-
-## OpenClaw
-#
-if (( $+commands[openclaw] )); then
-  source "$HOME/.openclaw/completions/openclaw.zsh"
 fi
 
 # End Profiling

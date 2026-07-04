@@ -60,17 +60,6 @@
         "matcher": ""
       }
     ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "python3 \"$HOME/.claude/hooks/tirith-check.py\"",
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash"
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [
@@ -95,14 +84,7 @@
   },
   "inputNeededNotifEnabled": true,
   "language": "japanese",
-  "mcpServers": {
-    "tirith": {
-      "args": [
-        "mcp-server"
-      ],
-      "command": "tirith"
-    }
-  },
+  "mcpServers": {},
   "permissions": {
     "allow": [
       "Bash(crit *)",
