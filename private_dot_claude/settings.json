@@ -114,6 +114,7 @@
     }
   },
   "language": "japanese",
+  "askUserQuestionTimeout": "30m",
   "autoUpdatesChannel": "stable",
   "plansDirectory": ".claude/plans",
   "voice": {

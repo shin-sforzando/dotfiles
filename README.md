@@ -25,6 +25,7 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
   - [Update Sheldon plugins](#update-sheldon-plugins)
   - [Add custom aliases](#add-custom-aliases)
   - [Edit Brewfile](#edit-brewfile)
+  - [Pre-commit hooks](#pre-commit-hooks)
 - [Key Components](#key-components)
   - [Managed Configurations](#managed-configurations)
   - [Sheldon Plugins](#sheldon-plugins)
@@ -109,6 +110,11 @@ sudo tailscale up --ssh
 # Tip: set the SSH rule (autogroup:member -> autogroup:self) to action:accept
 #      in the admin console to skip the periodic check-mode re-auth.
 # Pitfalls: see TROUBLESHOOTING.md "Tailscale / SSH".
+
+# 5. Enable git hooks (Lefthook) in the chezmoi source repo
+# The lefthook binary is installed via Brewfile, but hooks must be activated once per clone.
+cd ~/.local/share/chezmoi
+lefthook install
 ```
 
 > [!NOTE]
@@ -174,6 +180,18 @@ vim Brewfile
 # Install/update packages
 brew bundle --file=~/.local/share/chezmoi/Brewfile
 ```
+
+### Pre-commit hooks
+
+> [!NOTE]
+> This repo uses [Lefthook](https://lefthook.dev/) (`lefthook.yml`) to keep commits clean.
+> Activate the hooks once per clone with `lefthook install` (see [Manual Steps](#manual-steps)).
+
+On each commit, the `pre-commit` hook:
+
+- Sorts the Claude permission allowlist in `.claude/settings.local.json` (`jq`)
+- Formats shell scripts with `shfmt`
+- Lints Markdown (`markdownlint-cli2`) and validates JSON (`jq`)
 
 ## Key Components
 
@@ -267,6 +285,7 @@ For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.
 - [ov](https://noborus.github.io/ov/) - Feature-rich terminal pager
 - [topgrade](https://github.com/topgrade-rs/topgrade) - Upgrade all the things
 - [Atuin](https://atuin.sh) - Magical shell history sync
+- [Lefthook](https://lefthook.dev) - Fast and powerful Git hooks manager
 
 ## Misc
 

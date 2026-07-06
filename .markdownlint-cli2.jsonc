@@ -1,0 +1,8 @@
+{
+  "config": {
+    // Prose/tables in dotfiles docs are intentionally long; line-length noise is not useful here
+    "MD013": false,
+    // Byte-width pipe alignment is unsatisfiable for tables containing full-width CJK characters
+    "MD060": false
+  }
+}

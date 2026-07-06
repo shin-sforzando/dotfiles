@@ -1,0 +1,38 @@
+# Lefthook config for this chezmoi source repo's own git hooks.
+# Binary is declared in Brewfile; activate once per clone with `lefthook install`.
+# Kept out of chezmoi deployment via .chezmoiignore (would otherwise map to ~/lefthook.yml).
+
+pre-commit:
+  parallel: true
+  commands:
+    # Keep the Claude permission allowlist sorted so appended entries don't dirty the diff
+    sort-claude-settings:
+      run: |
+        if [ -f .claude/settings.local.json ]; then
+          jq --indent 2 '.permissions.allow |= ((. // []) | sort)' .claude/settings.local.json > .claude/.temp.$$.json && \
+          mv .claude/.temp.$$.json .claude/settings.local.json
+        fi
+      stage_fixed: true
+
+    # Format shell scripts to the .editorconfig 2-space style; .sh.tmpl is excluded by the *.sh glob.
+    # -ci keeps case bodies indented (matches the existing scripts; shfmt flattens them by default).
+    shfmt:
+      glob: "*.sh"
+      run: shfmt -i 2 -ci -w {staged_files}
+      stage_fixed: true
+
+    # Lint Markdown; .claude/plans/ is gitignored so it never reaches staging
+    markdownlint:
+      glob: "*.md"
+      run: markdownlint-cli2 {staged_files}
+
+    # Validate that strict JSON still parses; JSONC (Zed/VSCode) is excluded
+    check-json:
+      glob: "*.json"
+      exclude:
+        - "**/zed/**"
+        - ".vscode/**"
+      run: |
+        for file in {staged_files}; do
+          jq empty "$file" || { echo "Invalid JSON: $file"; exit 1; }
+        done

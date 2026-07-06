@@ -3,9 +3,13 @@
     "allow": [
       "Bash(apt-cache:*)",
       "Bash(chezmoi diff:*)",
+      "Bash(chezmoi state *)",
       "Bash(chezmoi status:*)",
-      "mcp__plugin_context7_context7__query-docs",
-      "mcp__plugin_context7_context7__resolve-library-id",
+      "Bash(gh run *)",
+      "Bash(mise current *)",
+      "Bash(mise ls *)",
+      "Read(//private/tmp/**)",
+      "WebFetch(domain:cmux.com)",
       "WebFetch(domain:ghostty.org)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:mise.jdx.dev)",
@@ -13,12 +17,12 @@
       "WebFetch(domain:starship.rs)",
       "WebFetch(domain:zed.dev)",
       "WebSearch",
-      "WebFetch(domain:cmux.com)",
-      "Read(//private/tmp/**)",
-      "Bash(chezmoi state *)",
-      "Bash(mise current *)",
-      "Bash(mise ls *)",
-      "Bash(gh run *)"
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "mcp__plugin_context-mode_context-mode__ctx_fetch_and_index",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_context7_context7__resolve-library-id"
     ]
   }
 }
