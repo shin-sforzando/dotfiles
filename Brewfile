@@ -305,6 +305,9 @@ if OS.mac?
   # Terminal emulator that uses platform-native UI and GPU acceleration
   cask "ghostty"
 
+  # GL-iNet KVM Client
+  cask "glkvm"
+
   # Web browser
   cask "google-chrome"
 
