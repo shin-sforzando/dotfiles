@@ -1,0 +1,102 @@
+{
+  "version": 3,
+  "lines": [
+    [
+      {
+        "id": "1",
+        "type": "model"
+      },
+      {
+        "id": "89c9d7c2-17ee-4b14-8a12-e9a2684955b6",
+        "type": "thinking-effort"
+      },
+      {
+        "id": "44bbfa84-5c77-4d58-bcad-3b754ee157ab",
+        "type": "voice-status"
+      },
+      {
+        "id": "dc2fd048-e1a7-4635-9ff3-969792e55b64",
+        "type": "remote-control-status"
+      },
+      {
+        "id": "3531bbdf-8c95-42c1-ab1c-a363fd206846",
+        "type": "flex-separator"
+      },
+      {
+        "id": "66a1f8e4-898e-420b-8bb8-887dd1e875be",
+        "type": "git-origin-owner-repo"
+      },
+      {
+        "id": "5",
+        "type": "git-branch"
+      },
+      {
+        "id": "bda452e8-464e-4ebc-b8a6-ff21e7442ff1",
+        "type": "git-worktree",
+        "color": "ansi256:64"
+      },
+      {
+        "id": "7",
+        "type": "git-changes"
+      }
+    ],
+    [
+      {
+        "id": "8cec3235-049b-424c-955c-45a7e2d5b79d",
+        "type": "context-bar",
+        "metadata": {
+          "display": "progress"
+        },
+        "color": "gradient:passion"
+      },
+      {
+        "id": "061c73e1-5cf5-4c6f-8128-54bcbcf5442d",
+        "type": "compaction-counter"
+      },
+      {
+        "id": "b6c8b6d3-e60f-4d7b-8263-0645264be8b9",
+        "type": "custom-command",
+        "commandPath": "node \"$(ls -dt $HOME/.claude/plugins/cache/context-mode/context-mode/*/bin/statusline.mjs 2>/dev/null | head -1)\""
+      },
+      {
+        "id": "a282ff20-e44e-4cf9-83a2-24e2e490986d",
+        "type": "flex-separator"
+      },
+      {
+        "id": "0bce4002-2218-48f6-895e-66d0e18854c7",
+        "type": "reset-timer"
+      },
+      {
+        "id": "a6725232-19eb-4747-b0e0-53de88c91baf",
+        "type": "extra-usage-used"
+      },
+      {
+        "id": "9dc7b54d-d8da-4893-9044-19f04e19fbe3",
+        "type": "weekly-usage"
+      }
+    ],
+    []
+  ],
+  "flexMode": "full",
+  "compactThreshold": 60,
+  "colorLevel": 3,
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "gitCacheTtlSeconds": 5,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": true,
+    "separators": [
+      ""
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [""],
+    "endCaps": [""],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false,
+    "theme": "onedark"
+  },
+  "defaultPadding": " "
+}

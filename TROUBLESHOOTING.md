@@ -42,7 +42,7 @@
 - [通知システム（Claude Code連携）](#通知システムclaude-code連携)
   - [通知が表示されない（macOS）](#通知が表示されないmacos)
   - [通知が表示されない（Linux）](#通知が表示されないlinux)
-  - [context-barが正しく表示されない](#context-barが正しく表示されない)
+  - [statuslineが正しく表示されない](#statuslineが正しく表示されない)
 - [ツール別の問題](#ツール別の問題)
   - [Homebrew / Linuxbrewの問題](#homebrew--linuxbrewの問題)
   - [topgradeの更新が失敗する](#topgradeの更新が失敗する)
@@ -695,33 +695,31 @@ sudo pacman -S libnotify jq
 ~/.claude/scripts/notify.sh "Test" "This is a test notification"
 ```
 
-### context-barが正しく表示されない
+### statuslineが正しく表示されない
 
-**症状**: Claude Codeのcontext-barに情報が表示されない、またはエラーが出る
+**症状**: Claude Codeのstatuslineに情報が表示されない、またはエラーが出る
 
-**原因**: `jq` が不足、または `transcript.jsonl` のパスが正しくない
+**原因**: `ccstatusline` が PATH で解決できない、または node ランタイム未導入
 
 **診断:**
 
 ```bash
-# jq のインストール確認
-which jq
+# ccstatusline の解決確認
+command -v ccstatusline || mise which ccstatusline
 
-# context-bar.sh を手動実行
-~/.claude/scripts/context-bar.sh
+# 実データを流して単体テスト
+echo '{"model":{"display_name":"Opus"},"workspace":{"current_dir":"'"$PWD"'"},"context_window":{"used_percentage":42,"context_window_size":200000}}' | ccstatusline
 ```
 
 **解決方法:**
 
 ```bash
-# jq をインストール
-brew install jq
+# node ランタイムと ccstatusline を再導入（mise 管理）
+mise install
+mise exec node -- npm install --global ccstatusline
 
-# スクリプトのパーミッション確認
-chmod +x ~/.claude/scripts/context-bar.sh
-
-# 手動実行して動作確認
-~/.claude/scripts/context-bar.sh
+# PATH 非解決時は settings.json の command を fallback に変更
+#   "command": "mise exec node -- ccstatusline"
 ```
 
 ## ツール別の問題
