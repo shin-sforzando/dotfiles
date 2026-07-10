@@ -1,2 +1,11 @@
 [tools]
 node = "lts"
+# npm-backend CLIs: live in mise's own install dir (node-version-independent),
+# so they stay on PATH in every repo regardless of its pinned node version.
+# cz-emoji is intentionally absent: it is a no-bin commitizen adapter installed
+# into the LTS node's global modules and referenced by an absolute path in ~/.czrc.
+"npm:ccstatusline" = "latest"
+"npm:npm-check-updates" = "latest"
+"npm:@playwright/mcp" = "latest"
+"npm:@playwright/cli" = "latest"
+"npm:commitizen" = "latest"
