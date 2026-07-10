@@ -714,12 +714,25 @@ echo '{"model":{"display_name":"Opus"},"workspace":{"current_dir":"'"$PWD"'"},"c
 **解決方法:**
 
 ```bash
-# node ランタイムと ccstatusline を再導入（mise 管理）
+# ccstatusline は mise の npm バックエンドツール（config.toml で宣言）。
+# node バージョン非依存の install dir に入るため、どのリポジトリの node pin でも
+# PATH に載る。再導入は config.toml 由来の一括インストールで十分。
 mise install
-mise exec node -- npm install --global ccstatusline
 
-# PATH 非解決時は settings.json の command を fallback に変更
-#   "command": "mise exec node -- ccstatusline"
+# 個別に入れ直したい場合
+mise use -g npm:ccstatusline
+```
+
+**cz-emoji が見つからない / commitizen がアダプタ読込で失敗する場合:**
+
+cz-emoji は bin を持たないアダプタで、LTS node の global modules
+（`~/.local/share/mise/installs/node/lts/lib/node_modules/cz-emoji`、`~/.czrc` が絶対パスで参照）に置く。
+mise 単独で LTS node を上げると `lts` シンボリックリンクが移動し、新 global に cz-emoji が無くなる窓が生じる。
+`chezmoi apply`（`run_onchange_mise-tools.sh.tmpl` の再実行）で再導入され解消する。
+
+```bash
+chezmoi apply   # または手動で:
+mise exec node@lts -- npm install --global cz-emoji
 ```
 
 ## ツール別の問題
