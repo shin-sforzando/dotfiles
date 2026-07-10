@@ -1,5 +1,4 @@
 #!/bin/bash
-# active-node: {{ with lookPath "mise" }}{{ output . "current" "node" | trim }}{{ end }}
 # config-hash: {{ include "private_dot_config/mise/config.toml" | sha256sum }}
 
 set -eufo pipefail
@@ -15,9 +14,10 @@ echo "📦 Installing mise tools (node + npm-backend CLIs)..."
 mise install
 
 # cz-emoji is a no-bin commitizen adapter, so it cannot be an npm-backend tool.
-# Keep it in the LTS node's global modules at the stable path ~/.czrc references.
-# Re-runs when the resolved LTS node changes (active-node marker above).
-echo "📦 Installing cz-emoji into the LTS node for commitizen..."
-mise exec node@lts -- npm install --global cz-emoji
+# Install it into a fixed, node-version-independent prefix that ~/.czrc references
+# by absolute path — so it survives LTS node upgrades without a reinstall trigger.
+# node@lts is only the runner here; the install target is the fixed prefix.
+echo "📦 Installing cz-emoji for commitizen..."
+mise exec node@lts -- npm install --global --prefix "${HOME}/.local/share/cz-emoji" cz-emoji
 
 echo "✅ mise tools installed."

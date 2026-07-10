@@ -725,14 +725,13 @@ mise use -g npm:ccstatusline
 
 **cz-emoji が見つからない / commitizen がアダプタ読込で失敗する場合:**
 
-cz-emoji は bin を持たないアダプタで、LTS node の global modules
-（`~/.local/share/mise/installs/node/lts/lib/node_modules/cz-emoji`、`~/.czrc` が絶対パスで参照）に置く。
-mise 単独で LTS node を上げると `lts` シンボリックリンクが移動し、新 global に cz-emoji が無くなる窓が生じる。
-`chezmoi apply`（`run_onchange_mise-tools.sh.tmpl` の再実行）で再導入され解消する。
+cz-emoji は bin を持たないアダプタなので npm バックエンドツールにできず、node バージョン非依存の
+固定 prefix `~/.local/share/cz-emoji/lib/node_modules/cz-emoji`（`~/.czrc` が絶対パスで参照）に置く。
+この場所は LTS node の昇格でも移動しないため通常は壊れない。手動で削除した等で欠けたら再導入する。
 
 ```bash
-chezmoi apply   # または手動で:
-mise exec node@lts -- npm install --global cz-emoji
+chezmoi apply   # run_onchange の再実行で再導入。または手動で:
+mise exec node@lts -- npm install --global --prefix "${HOME}/.local/share/cz-emoji" cz-emoji
 ```
 
 ## ツール別の問題
