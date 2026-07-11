@@ -134,7 +134,6 @@
     }
   },
   "language": "japanese",
-  "askUserQuestionTimeout": "30m",
   "autoUpdatesChannel": "stable",
   "plansDirectory": ".claude/plans",
   "voice": {
@@ -147,5 +146,6 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "mcpServers": {}
+  "mcpServers": {},
+  "tui": "fullscreen"
 }
