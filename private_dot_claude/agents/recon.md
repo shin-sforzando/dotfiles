@@ -3,7 +3,8 @@ name: recon
 description:
   Read-only exploration specialist for multi-file investigation, spec reading, log scans, and web research.
   Returns a structured summary (path:line + verdict) only — never raw dumps.
-tools: ["Read", "Grep", "Glob", "Bash", "WebFetch", "WebSearch"]
+tools: ["Read", "Grep", "Glob", "Bash", "WebFetch", "WebSearch", "ToolSearch", "mcp__plugin_context-mode_context-mode__*"]
+permissionMode: default
 model: sonnet
 effort: medium
 ---

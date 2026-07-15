@@ -55,7 +55,19 @@
     ],
     "defaultMode": "plan"
   },
+  "//hooks.PreToolUse[ctx-observer]": "Observe-only: prints ctx_execute/ctx_execute_file/ctx_batch_execute inputs as systemMessage each call. Returns no permissionDecision so context-mode's routing/security is untouched. settings.json is strict JSON (no // or /* */ comments); this dummy key is the JSON-safe way to annotate. See .claude/plans/ctx-batch-execute-eager-dawn.md",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__plugin_context-mode_context-mode__ctx.*execute",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{systemMessage: ((.tool_name | sub(\"mcp__plugin_context-mode_context-mode__\";\"\")) + \":\\n\" + (if (.tool_input.commands | type) == \"array\" then ([.tool_input.commands[]? | \"  • \" + (.label // \"\") + \": \" + .command] | join(\"\\n\")) else \"  \" + (if .tool_input.path then \"[\" + .tool_input.path + \"] \" else \"\" end) + \"(\" + (.tool_input.language // \"?\") + \")\\n\" + (.tool_input.code // \"(no code)\") end))}'"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",
@@ -102,6 +114,7 @@
     "context-mode@context-mode": true,
     "context7@claude-plugins-official": true,
     "crit@crit": true,
+    "dropbox@claude-plugins-official": true,
     "explanatory-output-style@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "figma@claude-plugins-official": true,

@@ -335,6 +335,9 @@ if OS.mac?
   # The Ultimate CSV Editor
   cask "smoothcsv"
 
+  # Native screenshots, recording, annotation, and editing from the menu bar
+  cask "snapzy"
+
   # Inspect macOS installer packages
   cask "suspicious-package"
 
