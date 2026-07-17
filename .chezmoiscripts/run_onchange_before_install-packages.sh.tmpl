@@ -32,7 +32,11 @@ if [ -f "$BREWFILE" ]; then
   )
 
   echo "📦 Installing Homebrew packages..."
-  brew bundle --file="$BREWFILE"
+  # Install-only (--no-upgrade): apply just converges to the declared set.
+  # Upgrades are delegated to topgrade, so apply never fights self-updating
+  # casks (e.g. wavebox is auto_updates; brew's upgrade path conflicts with
+  # the app updating itself in place and would abort the whole apply).
+  brew bundle --no-upgrade --file="$BREWFILE"
 fi
 
 # Rust: Install cargo-update

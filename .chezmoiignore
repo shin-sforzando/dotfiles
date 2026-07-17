@@ -12,6 +12,7 @@
 !.claude/commands/
 !.claude/CLAUDE.md
 !.claude/agents/
+!.claude/hooks/
 
 # Codebook
 codebook.toml

@@ -28,11 +28,7 @@
 
 # Disable specific steps - same options as the command line flag
 # disable = ["system", "emacs"]
-# claude_code disabled: topgrade spawns `claude plugin marketplace update` in a way
-# that triggers SIGTTOU and suspends the whole run (topgrade-rs/topgrade#2181).
-# The CLI itself is updated by the brew_cask step (cask claude-code@latest).
-# Remove this once the upstream bug is fixed.
-disable = ["containers", "helix", "vim", "pnpm", "gem", "ruby_gems", "uv", "yazi", "node", "claude_code"]
+disable = ["containers", "helix", "vim", "pnpm", "gem", "ruby_gems", "uv", "yazi", "node"]
 
 # Run these steps before all others
 # first = ["chezmoi"]
