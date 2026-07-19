@@ -24,8 +24,8 @@ hide_desktop_icons = false
 hide_desktop_widgets = false
 
 [capture.naming]
-screenshot_template = "{appName}_{datetime}_{ms}"
-recording_template = "{appName}_{datetime}"
+screenshot_template = "screenshot_{appName}_{datetime}_{ms}"
+recording_template = "record_{appName}_{datetime}"
 
 [capture.screenshot]
 format = "png"
