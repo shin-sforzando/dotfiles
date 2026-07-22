@@ -1,7 +1,20 @@
 dictionaries = ["en_us"]
 
-words = ["sforzando", "suzuki", "kashimada", "nishigauchi", "kanagawa"]
+words = [
+  "sforzando",
+  "suzuki",
+  "kashimada",
+  "nishigauchi",
+  "kanagawa"
+]
 
 flag_words = []
 
-ignore_paths = ["node_modules/**", ".venv/**", "dist/**", "build/**", "public/**", "vendor/**"]
+ignore_paths = [
+  "node_modules/**",
+  ".venv/**",
+  "dist/**",
+  "build/**",
+  "public/**",
+  "vendor/**"
+]
