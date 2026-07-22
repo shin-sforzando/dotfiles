@@ -179,22 +179,22 @@ key = "5"
 modifiers = ["command", "shift"]
 
 [shortcuts.global.pause_resume_recording]
-enabled = true
+enabled = false
 key = ""
 modifiers = []
 
 [shortcuts.global.toggle_pen_recording]
-enabled = true
+enabled = false
 key = ""
 modifiers = []
 
 [shortcuts.global.restart_recording]
-enabled = true
+enabled = false
 key = ""
 modifiers = []
 
 [shortcuts.global.delete_recording]
-enabled = true
+enabled = false
 key = ""
 modifiers = []
 
@@ -204,7 +204,7 @@ key = "A"
 modifiers = ["command", "shift"]
 
 [shortcuts.global.video_editor]
-enabled = true
+enabled = false
 key = "E"
 modifiers = ["command", "shift"]
 
@@ -250,8 +250,8 @@ modifiers = []
 
 [shortcuts.quick_access.edit_latest_capture]
 enabled = false
-key = "↩"
-modifiers = ["command"]
+key = ""
+modifiers = []
 
 [shortcuts.annotate_tools]
 disabled = []
@@ -289,7 +289,7 @@ key = "P"
 modifiers = ["command", "control"]
 
 [shortcuts.annotate_actions.cloud_upload]
-enabled = true
+enabled = false
 key = "U"
 modifiers = ["command"]
 
