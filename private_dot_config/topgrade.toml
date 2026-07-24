@@ -16,6 +16,7 @@
 # This avoids a blocking password prompt in the middle of an unattended run
 # (default: false)
 # pre_sudo = false
+pre_sudo = true
 
 # Periodically runs `sudo -v` or `please -w` to avoid password re-prompts during updates (default: false)
 # WARNING: This is a potential security risk; if you walk away from the computer while topgrade is running,
@@ -133,6 +134,12 @@ cleanup = true
 # Commands to run before anything
 [pre_commands]
 # "Emacs Snapshot" = "rm -rf ~/.emacs.d/elpa.bak && cp -rl ~/.emacs.d/elpa ~/.emacs.d/elpa.bak"
+
+# Homebrew chowns a keg to root when its service is started with sudo (tailscaled
+# needs root for Tailscale SSH), which makes `brew cleanup` fail on stale kegs.
+# Drop unlinked kegs here rather than chowning the live one back to the user,
+# so Homebrew's privilege-escalation guard on the running binary stays intact.
+"Prune stale tailscale kegs" = 'v=$(basename "$(readlink /opt/homebrew/opt/tailscale 2>/dev/null)" 2>/dev/null); [ -n "$v" ] && [ "$v" != "." ] && sudo find /opt/homebrew/Cellar/tailscale -mindepth 1 -maxdepth 1 -type d ! -name "$v" -exec rm -rf {} +; true'
 
 # Commands to run after anything
 [post_commands]
