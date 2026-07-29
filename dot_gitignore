@@ -90,7 +90,13 @@ $RECYCLE.BIN/
 *_REMOTE_*.txt
 
 # Worktree
-worktrees/
+# Anchored to the repository root. An unanchored `worktrees/` also matches at
+# any depth, so a tool that fails to locate a worktree's repository root and
+# falls back to $HOME applies this pattern to every checkout under
+# ~/**/worktrees/ - VS Code's Code Spell Checker does exactly that, because its
+# detector requires .git to be a directory and a worktree's .git is a file.
+/worktrees/
+/.claude/worktrees/
 
 
 ### VisualStudioCode ###
@@ -111,6 +117,11 @@ worktrees/
 # Ignore all local history of files
 .history
 .ionide
+
+
+### Claude Code ###
+# Machine-local permissions and settings, never shared across checkouts
+**/.claude/settings.local.json
 
 
 ### Data ###

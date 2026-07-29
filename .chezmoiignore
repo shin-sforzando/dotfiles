@@ -49,6 +49,3 @@ Brewfile
 # Lefthook config governs this repo's own hooks; not a dotfile to deploy
 lefthook.yml
 .markdownlint-cli2.jsonc
-
-# Git
-.gitignore
