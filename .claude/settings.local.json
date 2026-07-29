@@ -3,6 +3,8 @@
     "allow": [
       "Bash(apt-cache:*)",
       "Bash(chezmoi diff:*)",
+      "Bash(chezmoi ignored *)",
+      "Bash(chezmoi managed *)",
       "Bash(chezmoi state *)",
       "Bash(chezmoi status:*)",
       "Bash(gh run *)",
