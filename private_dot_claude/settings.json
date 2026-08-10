@@ -116,6 +116,7 @@
     "command": "ccstatusline"
   },
   "enabledPlugins": {
+    "cclens@cclens": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "claude-code-wakatime@wakatime": true,
@@ -137,6 +138,12 @@
     "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
+    "cclens": {
+      "source": {
+        "source": "github",
+        "repo": "lambdalisue/cclens"
+      }
+    },
     "context-mode": {
       "source": {
         "source": "github",
