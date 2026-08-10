@@ -19,6 +19,9 @@ brew "bingrep"
 # A cross-platform graphical process/system monitor aka. btm
 brew "bottom"
 
+# Surfaces wasted tokens and recurring friction in Claude Code usage; https://github.com/lambdalisue/cclens
+brew "lambdalisue/cclens/cclens"
+
 # Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
 
