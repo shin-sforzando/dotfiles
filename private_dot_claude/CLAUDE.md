@@ -10,6 +10,19 @@
 - Git operation rules - Git operations are basically performed by the user
   - Working directly on the main branch is strictly prohibited
 
+## Shell
+
+- The Bash tool keeps its working directory across calls. Do not re-anchor with `cd` on
+  every command - use absolute paths or `git -C <repo>`
+- Working with a worktree, never chain `cd` per command:
+  - `wtp add -b <branch> --quiet` prints only the created path - capture it once
+  - `wtp exec <worktree> -- <command>` runs a command in a worktree without moving
+  - `wtp add -b <branch> --exec "<command>"` does both in one step
+- Never wait with a foreground `sleep`. Use `run_in_background`, the Monitor tool,
+  or a blocking watcher such as `gh run watch`
+- Read a file with the Read tool before Edit or Write. Reading it through
+  `ctx_execute_file` does not satisfy that precondition
+
 ### Git Commit Message
 
 Git commit messages must comply with the conventions in the `~/.czrc` (cz-emoji) file below.
