@@ -117,7 +117,11 @@ alias history-stat="history 0 | awk '{print \$2}' | sort | uniq -c | sort -n -r 
 
 ## eza: Modern, maintained replacement for ls
 #
-if (( $+commands[eza] )); then
+# Interactive only: agent harnesses (Claude Code's Bash tool and friends) start
+# their shells from this profile without being interactive. There, replacing
+# `ls` and auto-listing on every `cd` corrupts command output and fails outright
+# whenever eza is not on the reduced PATH those shells get.
+if [[ -o interactive ]] && (( $+commands[eza] )); then
   alias ls="eza -hF --icons"
   alias l="eza -haF --icons"
   alias la="eza -haF --icons"
@@ -131,7 +135,7 @@ if (( $+commands[eza] )); then
   }
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _auto_ls_eza
-else
+elif [[ -o interactive ]]; then
   _auto_ls_default() {
     ls -GlA
   }
@@ -172,7 +176,8 @@ fi
 
 ## bat: https://github.com/sharkdp/bat
 #
-if (( $+commands[bat] )); then
+# Interactive only: see the eza block above
+if [[ -o interactive ]] && (( $+commands[bat] )); then
   alias cat="bat"
 fi
 
@@ -193,7 +198,9 @@ fi
 
 ## ugrep: https://github.com/Genivia/ugrep
 #
-if (( $+commands[ug] )); then
+# Interactive only: see the eza block above. Shadowing grep/egrep/fgrep changes
+# the flags and exit codes scripts and agents rely on.
+if [[ -o interactive ]] && (( $+commands[ug] )); then
   alias uq="ug -Q"  # short & quick query TUI (interactive, uses .ugrep config)
   alias ux="ug -UX" # short & quick binary pattern search (uses .ugrep config)
   alias uz="ug -z"  # short & quick compressed files and archives search (uses .ugrep config)
@@ -390,7 +397,10 @@ fi
 
 ## zoxide: Smarter cd command
 #
-if (( $+commands[zoxide] )); then
+# Interactive only: --cmd cd replaces cd itself, so in an agent shell a stale
+# relative path silently jumps to a frecent directory in another repository
+# (and fires that project's direnv) instead of failing. Agents need cd to fail.
+if [[ -o interactive ]] && (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh --cmd cd)"
 fi
 
