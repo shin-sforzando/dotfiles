@@ -55,3 +55,18 @@ elif [[ -e /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   # Linux
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
+
+#
+# mise
+#
+
+# `mise activate` lives in .zshrc, which only interactive shells read, while
+# Homebrew's PATH lands here and again via /etc/paths.d/homebrew. That
+# asymmetry let /opt/homebrew/bin/node shadow the pinned node in every
+# non-interactive shell. Shims are plain PATH entries resolving the version at
+# exec time, so they reach shells no hook ever runs in; .zshrc's `mise activate`
+# still supersedes them once a shell is interactive. Must stay after the
+# Homebrew block above, or Homebrew wins the prepend.
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh --shims)"
+fi
