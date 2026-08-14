@@ -1,0 +1,60 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+# This script intentionally has no run_once_/run_onchange_ prefix: the state it
+# manages lives outside chezmoi's destination dir (/Library, not $HOME), so
+# chezmoi cannot detect drift. macOS updates are reported to reset these flags,
+# and only an every-apply run restores them. The guard below keeps the common
+# case free of any sudo prompt.
+
+echo "🔧 Configuring macOS feature flags..."
+
+# =============================================================================
+# Disable the redesigned text cursor (CursorUIViewService memory growth)
+# https://zenn.dev/discus0434/articles/disable-cursoruiviewservice-macos
+# https://discussions.apple.com/thread/256101334
+#
+# CursorUIViewService is the TextInputUI XPC service that draws the Caps Lock /
+# input source indicator near the caret. It is widely reported to grow to
+# multiple GB of RAM and never release it until killed. Turning off the UIKit
+# feature flag it backs stops it from being spawned at all.
+#
+# Trade-off: the Caps Lock / input source indicator near the caret disappears.
+# =============================================================================
+FEATURE_FLAGS_DOMAIN="/Library/Preferences/FeatureFlags/Domain"
+UIKIT_PLIST="${FEATURE_FLAGS_DOMAIN}/UIKit.plist"
+
+# /Library/Preferences is root:wheel drwxr-xr-x, so reading needs no sudo.
+# Reading first is what keeps the steady-state apply prompt-free.
+# `plutil -extract raw` prints exactly "false" for a Boolean and exits 1 when
+# the file or the key path is missing, hence the `|| true` under `set -e`.
+CURSOR_FLAG="$(plutil -extract redesigned_text_cursor.Enabled raw "${UIKIT_PLIST}" 2>/dev/null || true)"
+
+if [[ "${CURSOR_FLAG}" == "false" ]]; then
+  echo "⏭️  redesigned_text_cursor already disabled"
+elif ! sudo -n true 2>/dev/null && [[ ! -t 0 ]]; then
+  # Non-interactive apply (CI, agent): a sudo prompt would hang forever.
+  echo "⚠️  sudo unavailable non-interactively, skipping. Run manually:"
+  echo "   sudo mkdir -p ${FEATURE_FLAGS_DOMAIN}"
+  echo "   sudo defaults write ${UIKIT_PLIST} redesigned_text_cursor -dict-add Enabled -bool NO"
+else
+  echo "🔐 Writing UIKit feature flag (requires sudo, /Library is root-owned)..."
+  sudo mkdir -p "${FEATURE_FLAGS_DOMAIN}"
+  # -bool NO stores a real Boolean false, not the string "NO".
+  sudo defaults write "${UIKIT_PLIST}" redesigned_text_cursor -dict-add Enabled -bool NO
+  # Killing the running instance frees its RAM now; it is not respawned once the
+  # flag is off. A reboot is still the authoritative way to apply the flag.
+  killall CursorUIViewService 2>/dev/null || true
+  echo "✅ redesigned_text_cursor disabled"
+
+  echo ""
+  echo "🔐 Manual step required:"
+  echo "   Reboot to apply the feature flag system-wide"
+  echo "   # verify: plutil -p ${UIKIT_PLIST} && pgrep -x CursorUIViewService"
+  echo ""
+fi
+
+echo "✅ macOS feature flags configured!"
+{{- end }}
