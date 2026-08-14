@@ -118,6 +118,9 @@ brew "imagemagick"
 # Lightweight and flexible CLI JSON processor
 brew "jq"
 
+# TUI for rsync; https://github.com/westpoint-io/lazyrsync
+brew "lazyrsync"
+
 # Terminal Markdown previewer; https://github.com/rivolink/leaf
 brew "leaf-md"
 
