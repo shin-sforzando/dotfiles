@@ -296,6 +296,10 @@ if OS.mac?
   # AI-powered translator
   cask "deepl"
 
+  # Diagram editor; installed for its CLI, which runs the ELK auto-layout and
+  # PNG/SVG/PDF export passes the drawio skill relies on
+  cask "drawio"
+
   # Cloud storage and file synchronization
   cask "dropbox"
 
