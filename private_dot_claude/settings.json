@@ -41,6 +41,7 @@
       "Bash(uniq *)",
       "Bash(wc *)",
       "LSP",
+      "mcp__drawio__*",
       "mcp__playwright__*",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__*",
       "mcp__plugin_context-mode_context-mode__*",
@@ -53,10 +54,8 @@
       "WebFetch",
       "WebSearch"
     ],
-    "defaultMode": "plan"
+    "defaultMode": "auto"
   },
-  "//hooks.PreToolUse[ctx-observer]": "Prints ctx_execute/ctx_execute_file/ctx_batch_execute inputs as systemMessage AND returns permissionDecision:allow to auto-approve these sandbox/read tools. Why: plan mode ignores permissions.allow, so the ctx_* wildcard alone still prompts every call; the hook allow skips the prompt while keeping plan mode. Scope is limited to context-mode ctx_*execute (matcher); all other tools stay under normal plan-mode gating. settings.json is strict JSON (no // or /* */ comments); this dummy key is the JSON-safe way to annotate. See .claude/plans/ctx-batch-execute-eager-dawn.md",
-  "//hooks.PreToolUse[ctx-readonly-allow]": "Same plan-mode workaround as ctx-observer, for the retrieval-side ctx_* tools whose tool_input shape (requests/queries/path) the observer's jq formatter cannot render. Kept as a separate entry so the formatter stays untouched: if that jq ever exits non-zero the hook output is discarded and the allow is lost with it. Destructive or state-changing tools (ctx_purge, ctx_upgrade) are deliberately excluded and stay under normal gating.",
   "hooks": {
     "PreToolUse": [
       {
@@ -74,6 +73,15 @@
           {
             "type": "command",
             "command": "jq -c '{hookSpecificOutput: {hookEventName: \"PreToolUse\", permissionDecision: \"allow\", permissionDecisionReason: \"context-mode read-only ctx_* auto-approved\"}}'"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__drawio__(search_shapes|list_pages|get_page)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{hookSpecificOutput: {hookEventName: \"PreToolUse\", permissionDecision: \"allow\", permissionDecisionReason: \"drawio read-only tool auto-approved\"}}'"
           }
         ]
       }
@@ -125,6 +133,7 @@
     "context-mode@context-mode": true,
     "context7@claude-plugins-official": true,
     "crit@crit": true,
+    "drawio@drawio": true,
     "dropbox@claude-plugins-official": true,
     "explanatory-output-style@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
@@ -156,6 +165,12 @@
         "repo": "tomasz-tomczyk/crit"
       }
     },
+    "drawio": {
+      "source": {
+        "source": "github",
+        "repo": "jgraph/drawio-mcp"
+      }
+    },
     "wakatime": {
       "source": {
         "source": "git",
@@ -166,6 +181,7 @@
   "language": "japanese",
   "autoUpdatesChannel": "stable",
   "plansDirectory": ".claude/plans",
+  "tui": "fullscreen",
   "voice": {
     "enabled": true,
     "mode": "hold"
@@ -176,6 +192,37 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
+  "//hooks.PreToolUse[ctx-observer]": "Prints ctx_execute/ctx_execute_file/ctx_batch_execute inputs as systemMessage AND returns permissionDecision:allow to auto-approve these sandbox/read tools. Why: plan mode ignores permissions.allow, so the ctx_* wildcard alone still prompts every call; the hook allow skips the prompt while keeping plan mode. Scope is limited to context-mode ctx_*execute (matcher); all other tools stay under normal plan-mode gating. settings.json is strict JSON (no // or /* */ comments); this dummy key is the JSON-safe way to annotate. See .claude/plans/ctx-batch-execute-eager-dawn.md",
+  "//hooks.PreToolUse[ctx-readonly-allow]": "Same plan-mode workaround as ctx-observer, for the retrieval-side ctx_* tools whose tool_input shape (requests/queries/path) the observer's jq formatter cannot render. Kept as a separate entry so the formatter stays untouched: if that jq ever exits non-zero the hook output is discarded and the allow is lost with it. Destructive or state-changing tools (ctx_purge, ctx_upgrade) are deliberately excluded and stay under normal gating.",
+  "//hooks.PreToolUse[drawio-readonly-allow]": "Same plan-mode workaround again, for the read-only tools of the drawio MCP server. Why: drawing an infrastructure diagram means calling search_shapes many times in a row to resolve vendor icon styles, and plan mode ignores the mcp__drawio__* entry in permissions.allow, so every lookup would prompt. set_page (writes a .drawio file) and open_drawio_xml (launches an external browser) are deliberately excluded and stay under normal gating.",
+  "//mcpServers": "Left empty on purpose. Claude Code does not read mcpServers from settings.json — an entry here never shows up in `claude mcp list`. User-scoped servers live in ~/.claude.json, which .chezmoiignore excludes, so they are declared in .chezmoiscripts/run_onchange_after_claude-mcp-servers.sh instead.",
   "mcpServers": {},
-  "tui": "fullscreen"
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: PUBLIC — shin-sforzando/dotfiles (github.com)",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: None configured",
+      "**Default / protected branches**: main (default); no branch protection rules or rulesets listed via gh",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Source control**: The trusted repo (shin-sforzando/dotfiles on github.com) and its remote(s) only",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar — repo .gitignore flags .envrc, .env, *.key as locally sensitive patterns",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (dotfiles management via chezmoi)",
+      "**Trusted repo**: shin-sforzando/dotfiles (public, github.com) — the working directory this session started in; since it is public, only this repo's own work belongs here — no confidential material, secrets, or ported content from elsewhere",
+      "**Org-specific CLIs**: None configured — chezmoi, wtp, gh, drawio MCP are personal tooling, not org-specific",
+      "**routine under shin-sforzando/dotfiles prefix**: chezmoi apply/diff/re-add and git operations scoped to this repo's working tree are routine"
+    ]
+  }
 }

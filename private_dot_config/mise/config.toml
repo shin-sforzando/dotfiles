@@ -6,6 +6,7 @@ node = "lts"
 # into the LTS node's global modules and referenced by an absolute path in ~/.czrc.
 "npm:ccstatusline" = "latest"
 "npm:npm-check-updates" = "latest"
+"npm:@drawio/mcp" = "latest"
 "npm:@playwright/mcp" = "latest"
 "npm:@playwright/cli" = "latest"
 "npm:commitizen" = "latest"

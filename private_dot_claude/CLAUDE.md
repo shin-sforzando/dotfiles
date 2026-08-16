@@ -10,6 +10,36 @@
 - Git operation rules - Git operations are basically performed by the user
   - Working directly on the main branch is strictly prohibited
 
+## Diagrams
+
+Diagrams are authored with the `drawio` plugin skill plus the `drawio` MCP server.
+The skill covers general draw.io XML rules; the points below are the local conventions
+it cannot know about.
+
+- Treat `.drawio` as a committed source artifact, not a throwaway. Default output
+  directory is `docs/diagrams/`
+- For any diagram needing domain-specific icons (GCP, Cisco / rack-mounted network
+  gear, Kubernetes, AWS, Azure), call `mcp__drawio__search_shapes` first and paste the
+  returned `style` verbatim into the `mxCell`. Substituting labelled rectangles for
+  real stencils is not acceptable - the icons are the reason we use draw.io at all
+- Update an existing `.drawio` through `get_page` / `set_page` rather than rewriting
+  the whole file, so the other pages and their layout survive
+- Diagram labels follow the language rule above (Japanese by default)
+- Set `fontFamily=Hiragino Sans` on every cell that carries text. It is the only
+  locally installed family that covers Latin and Japanese with one consistent face;
+  leaving the font unset splits the two scripts across different fallbacks
+- Never pull a web font in via `fontSource`. The desktop CLI cannot fetch it during
+  export and silently falls back to a serif face - `Noto Sans JP` and `GenShinGothic`
+  both resolve to zero faces on this machine and render as serif
+- Do not run the CLI's `--layout` (ELK) pass on a diagram built from vendor icons.
+  ELK resizes every node to fit its label, so an `aspect=fixed` stencil labelled from
+  below gets stretched (a 48px Cloud SQL icon came back 192px wide). Place those nodes
+  by hand on one shared centre axis and confirm the centres match before exporting.
+  ELK stays useful for plain box-and-arrow diagrams whose labels sit inside the node
+- Render your own work before reporting it done:
+  `drawio -x -f png -e -b 10 -s 2 -o /tmp/check.png <file>.drawio`, then read the PNG.
+  Misaligned connectors, wrapped labels and font fallbacks are only visible this way
+
 ## Shell
 
 - The Bash tool keeps its working directory across calls. Do not re-anchor with `cd` on
