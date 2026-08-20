@@ -133,8 +133,9 @@ brew "less"
 # The Log File Navigator
 brew "lnav"
 
-# Slightly unconventional command-line interface for markdownlint
-brew "markdownlint-cli2"
+# markdownlint-cli2 is deliberately absent: the formula depends on Homebrew's
+# node, which then shadowed mise's pinned node in every non-interactive shell.
+# It lives in mise's config.toml as an npm-backend tool instead.
 
 # Dev tools version manager
 brew "mise"

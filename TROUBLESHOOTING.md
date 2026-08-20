@@ -207,6 +207,48 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 exec zsh
 ```
 
+### 非対話シェルだけツールのバージョンが違う（mise が効かない）
+
+**症状**: 対話シェルでは mise が固定したバージョンが使われるのに、スクリプト・Git フック・エディタのタスク・
+GUI から起動したアプリでは別のバージョン（多くは Homebrew 版）が使われる。
+例: `zsh -lic 'node --version'` は v24.19.0 なのに `zsh -lc 'node --version'` は v26.7.0。
+
+**原因**: zsh の起動ファイルの読み込み範囲が Homebrew と mise で非対称だったこと。
+
+| 設定 | 記述場所 | 到達するシェル |
+| --- | --- | --- |
+| Homebrew | `~/.zprofile` の `path=(...)` と `brew shellenv`、加えて `/etc/paths.d/homebrew` | ほぼ全て |
+| mise `activate` | `~/.zshrc` | 対話シェルのみ |
+
+`mise activate zsh`（`--shims` なし）は zsh の `precmd` フックで PATH を書き換える方式なので、
+`.zshrc` を読まないシェルでは一切効かず、Homebrew 側のバイナリがそのまま使われる。
+
+**診断:**
+
+```bash
+# 3種のシェルで比較する。-lic だけ結果が違えば本件
+for m in -c -lc -lic; do printf "%-4s " "$m"; zsh $m 'command -v node' ; done
+
+# Homebrew 側に競合バイナリがあるか
+which -a node
+```
+
+**解決方法:**
+
+`~/.zprofile` が Homebrew 初期化の**後**に mise の shims を PATH へ載せる
+（`chezmoi apply ~/.zprofile` で反映される）。shims は実行時にバージョンを解決する薄いラッパーなので、
+フックが走らないシェルでも効く。対話シェルでは `.zshrc` の `mise activate` が実 install パスを
+前に出すため、`command -v node` が shims を指さないのが正常。
+
+```bash
+# 一時的に手当てする場合
+eval "$(mise activate zsh --shims)"
+```
+
+競合バイナリ自体を残さないため、node を推移的に引き込む Homebrew formula は使わない方針
+（`markdownlint-cli2` は Brewfile から外し、mise の npm バックエンドへ移設済み）。
+`brew uses --installed --recursive node` が空であることを保てば再発しない。
+
 ### Sheldonプラグインが読み込まれない
 
 **症状**: シェル起動時にSheldonプラグイン（autosuggestions、syntax-highlightingなど）が機能しない
