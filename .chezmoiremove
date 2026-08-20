@@ -1,1 +1,5 @@
 .claude/scripts/context-bar.sh
+
+# Split into issue-defaults and pr-defaults. chezmoi leaves a target in place when
+# its source merely disappears, so the old skill has to be retired explicitly.
+.claude/skills/github-issue-pr-defaults
