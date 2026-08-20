@@ -10,3 +10,6 @@ node = "lts"
 "npm:@playwright/mcp" = "latest"
 "npm:@playwright/cli" = "latest"
 "npm:commitizen" = "latest"
+# Moved off Homebrew: that formula pulls in its own node, which then shadowed
+# the node pinned here in every shell that never sources .zshrc.
+"npm:markdownlint-cli2" = "latest"
