@@ -46,6 +46,7 @@
       "compinit",
       "configtool",
       "CPPFLAGS",
+      "cppr",
       "Creset",
       "croc",
       "ctop",

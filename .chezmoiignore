@@ -5,7 +5,9 @@
 .claude.json
 
 # Claude Code runtime files (should NOT be synced)
-# Exclude all files in .claude/ except settings.json and scripts/
+# Everything under .claude/ is excluded, then the authored config is opened back up
+# one entry at a time. Runtime state (projects/, sessions/, caches, plans/) has no
+# negation and therefore stays local.
 .claude/*
 !.claude/settings.json
 !.claude/scripts/
@@ -13,6 +15,7 @@
 !.claude/CLAUDE.md
 !.claude/agents/
 !.claude/hooks/
+!.claude/skills/
 
 # Codebook
 codebook.toml
