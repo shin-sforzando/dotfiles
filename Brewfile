@@ -176,6 +176,9 @@ brew "pandoc"
 # CLI tool to generate, analyze, convert and manipulate colors
 brew "pastel"
 
+# Terminal pixel-art office for AI coding agents; injects hooks into ~/.claude/settings.json
+brew "pixtuoid"
+
 # procs is a replacement for ps
 brew "procs"
 

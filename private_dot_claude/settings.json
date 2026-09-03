@@ -84,6 +84,16 @@
             "command": "jq -c '{hookSpecificOutput: {hookEventName: \"PreToolUse\", permissionDecision: \"allow\", permissionDecisionReason: \"drawio read-only tool auto-approved\"}}'"
           }
         ]
+      },
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -93,6 +103,16 @@
           {
             "type": "command",
             "command": "~/.claude/scripts/notify.sh"
+          }
+        ]
+      },
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
       }
@@ -105,6 +125,16 @@
             "command": "~/.claude/hooks/context-mode-cache-heal.mjs"
           }
         ]
+      },
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -114,6 +144,66 @@
           {
             "type": "command",
             "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "_pixtuoid": true,
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
       }
