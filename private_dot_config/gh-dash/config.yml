@@ -1,0 +1,17 @@
+# gh-dash authenticates through the gh CLI's own token, so nothing secret
+# belongs in this file -- ~/.config/gh/hosts.yml holds the credential and stays
+# outside chezmoi.
+# Kept to the documented minimum on purpose: gh-dash ships defaults for
+# everything else, and copying its full default config here would only create a
+# second source of truth to maintain. Add sections as real usage shows gaps.
+prSections:
+  - title: "My Pull Requests"
+    filters: "is:open author:@me"
+
+issuesSections:
+  - title: "My Issues"
+    filters: "is:open author:@me"
+
+notificationsSections:
+  - title: "All"
+    filters: ""
