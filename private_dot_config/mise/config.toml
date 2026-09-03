@@ -7,8 +7,24 @@ node = "lts"
 "npm:ccstatusline" = "latest"
 "npm:npm-check-updates" = "latest"
 "npm:@drawio/mcp" = "latest"
-"npm:@playwright/mcp" = "latest"
-"npm:@playwright/cli" = "latest"
+# Microsoft moved its npm publishing off GitHub Actions onto the internal 1ES
+# release pipeline (playwright/playwright-core 2026-08-07, the MCP/CLI wrappers
+# 2026-08-27), and that pipeline emits no npm provenance attestations, so mise's
+# no-downgrade trust policy rejects every release from then on.
+# Verified benign before excluding: the same publisher/provenance flip hit
+# typescript and @microsoft/* on the same dates, microsoft1es
+# (npmjs@microsoft.com) is a registered maintainer on every one of these
+# packages, and diffing each unsigned build against the last signed one shows no
+# install hooks, no added dependencies and no external hostname that was not
+# already in the signed build.
+# Excluded by bare package name rather than per-version on purpose: the wrappers
+# depend on dated playwright alphas, so a version-pinned exclude would need all
+# six entries rewritten on every upgrade. The cost is that provenance regressions
+# in these four packages are no longer detected -- revert to per-version excludes
+# once upstream restores attestations. The transitive playwright pins are listed
+# because the check walks the whole dependency tree, not just the named package.
+"npm:@playwright/mcp" = { version = "latest", trust_policy_excludes = ["@playwright/mcp", "playwright", "playwright-core"] }
+"npm:@playwright/cli" = { version = "latest", trust_policy_excludes = ["@playwright/cli", "playwright", "playwright-core"] }
 "npm:commitizen" = "latest"
 # Moved off Homebrew: that formula pulls in its own node, which then shadowed
 # the node pinned here in every shell that never sources .zshrc.
