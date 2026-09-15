@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "lines": [
     [
       {
@@ -92,8 +92,12 @@
     "separatorInvertBackground": [
       false
     ],
-    "startCaps": [""],
-    "endCaps": [""],
+    "startCaps": [
+      ""
+    ],
+    "endCaps": [
+      ""
+    ],
     "autoAlign": false,
     "continueThemeAcrossLines": false,
     "theme": "onedark"
