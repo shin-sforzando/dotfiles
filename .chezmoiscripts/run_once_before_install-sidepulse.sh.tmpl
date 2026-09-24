@@ -1,0 +1,22 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+# SidePulse (LED status for coding agents) has no Homebrew formula; its official
+# installer is the only supported route. It runs as a *before* script on purpose:
+# `sidepulse setup` rewrites ~/.claude/settings.json with machine-specific absolute
+# hook paths (…/python3.X/site-packages/…), and chezmoi then overwrites that file
+# with the portable `~/.local/bin/sidepulse hook-log` form declared in source.
+# Ordered after install-packages.sh so Command Line Tools (python3) already exist.
+
+# Upgrades belong to `sidepulse update`; re-running here would only re-inject the
+# absolute-path hooks and leave settings.json drifted until the next apply.
+if [ -x "$HOME/.local/bin/sidepulse" ]; then
+  echo "💡 SidePulse already installed, skipping"
+  exit 0
+fi
+
+echo "💡 Installing SidePulse..."
+curl -fsSL https://sidepulse.io/setup.sh | sh
+{{ end -}}
