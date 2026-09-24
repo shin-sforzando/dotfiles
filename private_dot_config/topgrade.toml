@@ -150,6 +150,9 @@ cleanup = true
 # "Python Environment" = "~/dev/.env/bin/pip install -i https://pypi.python.org/simple -U --upgrade-strategy eager jupyter"
 # "Custom command using interactive shell (unix)" = "-i vim_upgrade"
 
+# SidePulse has no package manager; the script also reverts the hook drift its setup causes
+"SidePulse" = "~/.claude/scripts/sidepulse-update.sh"
+
 [python]
 # enable_pip_review = true                         ###disabled by default
 # enable_pip_review_local = true                   ###disabled by default

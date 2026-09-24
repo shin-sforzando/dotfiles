@@ -94,6 +94,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -113,6 +122,15 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
       }
@@ -135,6 +153,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -144,6 +171,15 @@
           {
             "type": "command",
             "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
       }
@@ -158,6 +194,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
       }
     ],
     "PermissionRequest": [
@@ -168,6 +213,15 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
       }
@@ -194,6 +248,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -204,6 +267,59 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
       }
