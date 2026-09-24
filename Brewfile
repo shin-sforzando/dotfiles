@@ -200,6 +200,9 @@ brew "sd"
 # Fast Zsh plugin manager
 brew "sheldon"
 
+# Static analysis for shell scripts; run on staged *.sh by lefthook
+brew "shellcheck"
+
 # Shell script formatter
 brew "shfmt"
 

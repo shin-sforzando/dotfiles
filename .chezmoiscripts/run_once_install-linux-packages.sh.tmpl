@@ -151,6 +151,8 @@ if [[ ! -f /usr/share/keyrings/docker.gpg ]]; then
   sudo chmod a+r /usr/share/keyrings/docker.gpg
 
   # Add Docker repository (DEB822 format)
+  # /etc/os-release exists only on the target host, so shellcheck cannot follow it
+  # shellcheck source=/dev/null
   cat <<EOF | sudo tee /etc/apt/sources.list.d/docker.sources
 Types: deb
 URIs: https://download.docker.com/linux/debian
