@@ -1,0 +1,39 @@
+{
+  "format": "sidepulse-animation-profile",
+  "version": 1,
+  "name": "Signal",
+  "animations": {
+    "idle_ready": "custom:white-tide",
+    "working": "custom:blue-tide",
+    "tool_running": "custom:blue-tide",
+    "long_task_progress": "custom:blue-tide",
+    "waiting_for_input": "custom:amber-tide",
+    "blocked_error": "custom:red-tide",
+    "completed": "custom:green-tide",
+    "unknown": "purple-tide",
+    "lid_open": "lid-open",
+    "lid_closed": "lid-closed"
+  },
+  "custom_animations": {
+    "custom:white-tide": {
+      "name": "White Tide",
+      "program": "off 320ms cosine\n0:#FFFFFF 760ms pulse 0ms; 1:#FFFFFF 760ms pulse 95ms; 2:#FFFFFF 760ms pulse 190ms; 3:#FFFFFF 760ms pulse 285ms; 4:#FFFFFF 760ms pulse 380ms; 5:#FFFFFF 760ms pulse 475ms; 6:#FFFFFF 760ms pulse 570ms; 7:#FFFFFF 760ms pulse 665ms\nrepeat"
+    },
+    "custom:blue-tide": {
+      "name": "Blue Tide",
+      "program": "off 320ms cosine\n0:#0000FF 760ms pulse 0ms; 1:#0000FF 760ms pulse 95ms; 2:#0000FF 760ms pulse 190ms; 3:#0000FF 760ms pulse 285ms; 4:#0000FF 760ms pulse 380ms; 5:#0000FF 760ms pulse 475ms; 6:#0000FF 760ms pulse 570ms; 7:#0000FF 760ms pulse 665ms\nrepeat"
+    },
+    "custom:amber-tide": {
+      "name": "Amber Tide",
+      "program": "off 320ms cosine\n0:#FF8000 760ms pulse 0ms; 1:#FF8000 760ms pulse 95ms; 2:#FF8000 760ms pulse 190ms; 3:#FF8000 760ms pulse 285ms; 4:#FF8000 760ms pulse 380ms; 5:#FF8000 760ms pulse 475ms; 6:#FF8000 760ms pulse 570ms; 7:#FF8000 760ms pulse 665ms\nrepeat"
+    },
+    "custom:red-tide": {
+      "name": "Red Tide",
+      "program": "off 320ms cosine\n0:#FF0000 760ms pulse 0ms; 1:#FF0000 760ms pulse 95ms; 2:#FF0000 760ms pulse 190ms; 3:#FF0000 760ms pulse 285ms; 4:#FF0000 760ms pulse 380ms; 5:#FF0000 760ms pulse 475ms; 6:#FF0000 760ms pulse 570ms; 7:#FF0000 760ms pulse 665ms\nrepeat"
+    },
+    "custom:green-tide": {
+      "name": "Green Tide",
+      "program": "off 320ms cosine\n0:#00FF00 760ms pulse 0ms; 1:#00FF00 760ms pulse 95ms; 2:#00FF00 760ms pulse 190ms; 3:#00FF00 760ms pulse 285ms; 4:#00FF00 760ms pulse 380ms; 5:#00FF00 760ms pulse 475ms; 6:#00FF00 760ms pulse 570ms; 7:#00FF00 760ms pulse 665ms\nrepeat"
+    }
+  }
+}
