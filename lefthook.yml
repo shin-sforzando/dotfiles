@@ -21,6 +21,23 @@ pre-commit:
       run: shfmt -i 2 -ci -w {staged_files}
       stage_fixed: true
 
+    # Static analysis for plain scripts; any finding (including info level) fails the commit
+    shellcheck:
+      glob: "*.sh"
+      run: shellcheck {staged_files}
+
+    # Most scripts are templates, which shellcheck cannot parse raw, so lint them as rendered
+    # for the committing host. Templates for another OS render to whitespace, which chezmoi
+    # itself skips, so they are skipped here too rather than tripping SC2148.
+    shellcheck-templates:
+      glob: "*.sh.tmpl"
+      run: |
+        for file in {staged_files}; do
+          rendered=$(chezmoi execute-template < "$file") || { echo "Template render failed: $file"; exit 1; }
+          [ -z "$(printf '%s' "$rendered" | tr -d '[:space:]')" ] && continue
+          printf '%s\n' "$rendered" | shellcheck - || { echo "shellcheck failed: $file"; exit 1; }
+        done
+
     # Lint Markdown; .claude/plans/ is gitignored so it never reaches staging
     markdownlint:
       glob: "*.md"
