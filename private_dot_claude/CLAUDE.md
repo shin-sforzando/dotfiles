@@ -63,6 +63,9 @@ Git commit messages must comply with the conventions in the `~/.czrc` (cz-emoji)
 <type>: <:emoji-code:> <subject>
 ```
 
+- Write the subject and body in English, even when the conversation is in Japanese.
+  The "Respond in Japanese" rule and the `language: japanese` setting cover replies to
+  the user, not text committed to the repository
 - The subject must be 72 characters or fewer
 - Do not include a scope
 - Write emojis using text codes (e.g., `:sparkles:`); they will be converted to emojis on GitHub

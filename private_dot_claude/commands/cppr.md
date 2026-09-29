@@ -38,8 +38,8 @@ Based on the above changes:
    Follow the repository's own naming convention; a common one is
    `NNN_feature_name` with a zero-padded 3-digit issue number, e.g.
    `019_prepare_github_actions`.
-3. Create a single commit with an appropriate cz-emoji message
-   (e.g. `feat: :sparkles: ...`, `fix: :bug: ...`).
+3. Create a single commit with an appropriate cz-emoji message written in English
+   (e.g. `feat: :sparkles: ...`, `fix: :bug: ...`), regardless of the conversation language.
 4. Push the branch to origin.
 5. Determine the **source issue number**: from the branch name (`NNN_...`), otherwise infer
    it from the change/context.
