@@ -103,16 +103,6 @@
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=PreToolUse\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "Notification": [
@@ -141,15 +131,6 @@
           {
             "type": "command",
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=Notification\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
           }
         ]
       }
@@ -181,15 +162,6 @@
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=SessionStart\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "Stop": [
@@ -208,15 +180,6 @@
           {
             "type": "command",
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=Stop\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
           }
         ]
       }
@@ -240,16 +203,6 @@
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=PostToolUse\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "PermissionRequest": [
@@ -269,16 +222,6 @@
           {
             "type": "command",
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 330 -X POST --data-binary @- \u0022http://localhost:8765/permission?event=PermissionRequest\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 330
           }
         ]
       }
@@ -335,15 +278,6 @@
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=SessionEnd\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "UserPromptSubmit": [
@@ -355,15 +289,6 @@
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=UserPromptSubmit\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "PostToolUseFailure": [
@@ -373,16 +298,6 @@
           {
             "type": "command",
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=PostToolUseFailure\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
           }
         ]
       }
@@ -405,17 +320,6 @@
           {
             "type": "command",
             "command": "~/.local/bin/sidepulse hook-log --provider claude --log ~/.local/state/sidepulse/agent-monitor/claude.jsonl ; true"
-          }
-        ]
-      }
-    ],
-    "StopFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --connect-timeout 0.5 -m 5 -X POST --data-binary @- \u0022http://localhost:8765/hook?event=StopFailure\u0026client=logi-claude-desktop\u0022; exit 0",
-            "timeout": 5
           }
         ]
       }
