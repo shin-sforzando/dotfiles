@@ -1,7 +1,6 @@
 ## Add Homebrew taps
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 tap "satococoa/tap"
-tap "sheeki03/tap"
 
 ## Install Packages
 # The magical shell history
@@ -336,6 +335,9 @@ if OS.mac?
 
   # Image optimization tool
   cask "imageoptim"
+
+  # Logicool Options+
+  cask "logi-options+"
 
   # Zip archiver for Windows compatibility
   cask "macwinzipper"
