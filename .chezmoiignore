@@ -43,6 +43,9 @@ assets/se/
 # These are documentation for the chezmoi repository itself
 MIGRATION.md
 README.md
+# Project-scope instructions for Claude Code working in this repo; deploying it
+# would drop a stray ~/CLAUDE.md that every session under HOME would load
+CLAUDE.md
 TROUBLESHOOTING.md
 
 # Brewfile stays in chezmoi source directory only
