@@ -5,3 +5,5 @@
 [git]
     autoCommit = true
     autoPush = true
+    # Relative to the source dir; keeps auto-commits in cz-emoji format
+    commitMessageTemplateFile = ".commit_message.tmpl"

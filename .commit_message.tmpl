@@ -1,0 +1,51 @@
+{{- /*
+  Commit message for chezmoi's git.autoCommit (add / re-add / edit / forget / chattr).
+  chezmoi's built-in message ("Update .foo Update .bar") ignores this repo's cz-emoji
+  convention, so rebuild it here. Everything is English on purpose: this text lands in
+  git history, which the language rule in ~/.claude/CLAUDE.md keeps in English.
+  Derived from chezmoi's own assets/templates/COMMIT_MESSAGE.tmpl.
+*/ -}}
+{{- $changes := list -}}
+{{- with .chezmoi.status -}}
+{{-   range .Ordinary -}}
+{{-     if and (eq .X 'A') (eq .Y '.') -}}
+{{-       $changes = append $changes (printf "add %s" (.Path | targetRelPath)) -}}
+{{-     else if and (eq .X 'D') (eq .Y '.') -}}
+{{-       $changes = append $changes (printf "remove %s" (.Path | targetRelPath)) -}}
+{{-     else if and (eq .X 'M') (eq .Y '.') -}}
+{{-       $changes = append $changes (printf "update %s" (.Path | targetRelPath)) -}}
+{{-     else -}}
+{{-       warnf "unsupported XY: %c%c" .X .Y -}}
+{{-     end -}}
+{{-   end -}}
+{{-   range .RenamedOrCopied -}}
+{{-     if and (eq .X 'R') (eq .Y '.') -}}
+{{-       $changes = append $changes (printf "change attributes of %s" (.Path | targetRelPath)) -}}
+{{-     else if and (eq .X 'C') (eq .Y '.') -}}
+{{-       $changes = append $changes (printf "copy %s to %s" (.OrigPath | targetRelPath) (.Path | targetRelPath)) -}}
+{{-     else -}}
+{{-       warnf "unsupported XY: %c%c" .X .Y -}}
+{{-     end -}}
+{{-   end -}}
+{{-   range .Unmerged -}}
+{{-     warnf "unmerged files" -}}
+{{-   end -}}
+{{-   range .Untracked -}}
+{{-     warnf "untracked files" -}}
+{{-   end -}}
+{{- end -}}
+{{- /* A single change fits the subject; otherwise summarise and list every path in the body */ -}}
+{{- $prefix := "chore: :paperclip: " -}}
+{{- $single := "" -}}
+{{- if eq (len $changes) 1 -}}
+{{-   $single = printf "%s%s" $prefix (first $changes) -}}
+{{- end -}}
+{{- if and $single (le (len $single) 72) -}}
+{{ $single }}
+{{ else -}}
+{{ $prefix }}sync {{ len $changes }} chezmoi-managed {{ if eq (len $changes) 1 }}file{{ else }}files{{ end }}
+
+{{ range $changes -}}
+- {{ . }}
+{{ end -}}
+{{ end -}}
