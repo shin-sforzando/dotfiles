@@ -4,8 +4,5 @@ theme = "normal"
 audio = { muted = true }
 
 [[pets]]
-kind = "cat"
-
-[[pets]]
 kind = "dog"
 name = "Leon"
