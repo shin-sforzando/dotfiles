@@ -139,11 +139,11 @@ brew "lnav"
 # Dev tools version manager
 brew "mise"
 
-# Markdown viewer; https://github.com/k1LoW/mo
-brew "k1LoW/tap/mo"
-
 # CLI tool for saving complete web pages as a single HTML file
 brew "monolith"
+
+# Clean, uninstall, analyze, optimize, and monitor your Mac; https://github.com/tw93/mole
+brew "mole"
 
 # Remote terminal application
 brew "mosh"
