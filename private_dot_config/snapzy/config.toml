@@ -221,7 +221,7 @@ key = ""
 modifiers = []
 
 [shortcuts.global.delayed_capture]
-enabled = true
+enabled = false
 key = ""
 modifiers = []
 
