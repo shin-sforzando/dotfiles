@@ -3,3 +3,7 @@
 # Split into issue-defaults and pr-defaults. chezmoi leaves a target in place when
 # its source merely disappears, so the old skill has to be retired explicitly.
 .claude/skills/github-issue-pr-defaults
+
+# Renamed to jp.co.sforzando.*: com.sforzando is someone else's domain. launchd
+# would keep loading the stale plist at every login if it were left behind.
+Library/LaunchAgents/com.sforzando.ambient-obsidian-sync.plist

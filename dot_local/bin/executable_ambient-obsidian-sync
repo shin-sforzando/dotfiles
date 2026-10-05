@@ -1,0 +1,373 @@
+#!/bin/bash
+#
+# Copies Ambient Context day summaries into Obsidian daily notes.
+#
+# Ambient Context has no post-summary hook, so a LaunchAgent watches its
+# Summaries/ folder and runs this script on every change. Only the summary is
+# carried over: the raw Days/ capture stays outside the vault because Templater,
+# Linter and the vault's AI plugins would otherwise touch or ship it.
+#
+# Each note gets one block between START_MARKER and END_MARKER. Only that block
+# is ever rewritten, so handwritten text in the same note survives re-runs.
+# Outside the block the script only adds missing tags to the frontmatter.
+# The script is idempotent: launchd may fire several times per change, and
+# every run re-checks all recent summaries instead of trusting which file
+# triggered it.
+#
+# The summary prompt already asks for vault-ready Markdown, but model output
+# drifts, so the body is normalized here as well: markdownlint (MD013 off)
+# must pass and Obsidian must not mistake prose for tags.
+#
+# Written for /bin/bash 3.2 and BSD awk because launchd runs it without
+# Homebrew on PATH.
+
+set -euo pipefail
+
+# BSD awk compares strings with the locale's collation, under which distinct
+# CJK characters such as "。" and "」" compare equal; byte semantics avoid that.
+export LC_ALL=C
+
+SUMMARIES_DIR="${AMBIENT_SUMMARIES_DIR:-$HOME/Documents/Ambient Context/Summaries}"
+DAILY_DIR="${OBSIDIAN_DAILY_DIR:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Daily}"
+# Older summaries are skipped so a daily note deleted on purpose is not resurrected.
+MAX_AGE_DAYS="${AMBIENT_SYNC_MAX_AGE_DAYS:-7}"
+NOTIFY="${AMBIENT_SYNC_NOTIFY:-1}"
+FIXED_TAGS="daily ambient-context"
+
+START_MARKER='<!-- ambient-context:start -->'
+END_MARKER='<!-- ambient-context:end -->'
+
+log() {
+  printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >&2
+}
+
+notify_failure() {
+  [ "$NOTIFY" = 1 ] || return 0
+  # A failed sync is otherwise invisible until someone opens the log.
+  osascript -e "display notification \"$1\" with title \"Ambient Context → Obsidian\"" >/dev/null 2>&1 || true
+}
+
+# Prints one frontmatter value of the summary, or nothing.
+frontmatter_value() {
+  awk -v key="$2" '
+    NR == 1 && $0 != "---" { exit }
+    NR > 1 && $0 == "---" { exit }
+    index($0, key ":") == 1 { sub("^" key ":[ \t]*", ""); print; exit }
+  ' "$1"
+}
+
+# Prints the summary tags as space-separated vault tags. Models add "#",
+# capitals or spaces despite the prompt, and Obsidian rejects all of those.
+summary_tags() {
+  awk '
+    NR == 1 && $0 != "---" { exit }
+    NR > 1 && $0 == "---" { exit }
+    /^tags:/ { in_tags = 1; v = $0; sub(/^tags:[ \t]*/, "", v); gsub(/[][]/, "", v); n = split(v, a, ","); for (i = 1; i <= n; i++) print a[i]; next }
+    in_tags && /^[ \t]*- / { v = $0; sub(/^[ \t]*- /, "", v); print v; next }
+    { in_tags = 0 }
+  ' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/["#]//g' -e "s/'//g" -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/[[:space:]][[:space:]]*/-/g' -e 's/[^a-z0-9_/-]//g' | awk 'NF' | tr '\n' ' '
+}
+
+# Rewrites the summary body into the shape the daily note wants:
+# - "# title" becomes the plain first line of the narrative paragraph and
+#   "## x" becomes "### x", nesting the sections under "## Ambient Context";
+# - horizontal rules and bold/italic emphasis are dropped;
+# - bare URLs are wrapped, and "#" before a word is escaped so it is not a tag;
+# - Japanese prose gets one sentence per line, list items keep their indent.
+# Code spans and fenced blocks pass through untouched.
+# Loaded with read instead of $(cat <<...): bash 3.2 mis-parses quotes and
+# parentheses inside a heredoc nested in command substitution.
+read -r -d '' BODY_AWK <<'AWK' || true
+function hide(s, frag) { stash[++nstash] = frag; return s "\001" nstash "\002" }
+function unhide(s,   out, n) {
+  out = ""
+  while (match(s, "\001[0-9]+\002")) {
+    n = substr(s, RSTART + 1, RLENGTH - 2) + 0
+    out = out substr(s, 1, RSTART - 1) stash[n]
+    s = substr(s, RSTART + RLENGTH)
+  }
+  return out s
+}
+function protect_code(s,   out) {
+  out = ""
+  while (match(s, /`[^`]*`/)) {
+    out = hide(out substr(s, 1, RSTART - 1), substr(s, RSTART, RLENGTH))
+    s = substr(s, RSTART + RLENGTH)
+  }
+  return out s
+}
+function protect_urls(s,   out, pre, url, tail) {
+  out = ""
+  while (match(s, /https?:\/\/[A-Za-z0-9._~:\/?#@!$&*+,;=%-]+/)) {
+    pre = substr(s, 1, RSTART - 1)
+    url = substr(s, RSTART, RLENGTH)
+    s = substr(s, RSTART + RLENGTH)
+    tail = ""
+    while (url ~ /[.,;:!?]$/) { tail = substr(url, length(url)) tail; url = substr(url, 1, length(url) - 1) }
+    # Markdown links and already-wrapped autolinks are fine as they are.
+    if (pre ~ /(\]\(|<)$/) out = hide(out pre, url)
+    else out = hide(out pre, "<" url ">")
+    s = tail s
+  }
+  return out s
+}
+function strip_emphasis(s) {
+  gsub(/\*\*/, "", s)
+  while (match(s, /\*[^* \t][^*]*\*/)) s = substr(s, 1, RSTART - 1) substr(s, RSTART + 1, RLENGTH - 2) substr(s, RSTART + RLENGTH)
+  return s
+}
+function escape_tags(s,   out, i, c, prev, next_c) {
+  out = ""
+  for (i = 1; i <= length(s); i++) {
+    c = substr(s, i, 1)
+    if (c == "#") {
+      prev = (i == 1) ? " " : substr(s, i - 1, 1)
+      next_c = substr(s, i + 1, 1)
+      if ((prev == " " || prev == "\t") && next_c != "" && next_c != " " && next_c != "#") c = "\\#"
+    }
+    out = out c
+  }
+  return out
+}
+function split_sentences(s, indent,   out, i, j, rest, k, moved) {
+  out = ""
+  while ((i = index(s, "。")) > 0) {
+    j = i + length("。")
+    do {
+      moved = 0
+      for (k = 1; k <= nclosers; k++) if (substr(s, j, length(closers[k])) == closers[k]) { j += length(closers[k]); moved = 1 }
+    } while (moved)
+    rest = substr(s, j)
+    if (rest ~ /^[ \t]*$/) break
+    sub(/^[ \t]+/, "", rest)
+    out = out substr(s, 1, j - 1) "\n" indent
+    s = rest
+  }
+  return out s
+}
+BEGIN { nclosers = split("」 』 ） ) 】", closers, " ") }
+NR == 1 && $0 == "---" { in_fm = 1; next }
+in_fm { if ($0 == "---") in_fm = 0; next }
+/^[ \t]*(```|~~~)/ {
+  # markdownlint MD040 wants a language on every opening fence.
+  if (!in_fence && $0 ~ /^[ \t]*(```|~~~)[ \t]*$/) sub(/[ \t]*$/, "text")
+  in_fence = !in_fence
+  print
+  next
+}
+in_fence { print; next }
+{ bare = $0; gsub(/[ \t]/, "", bare) }
+bare ~ /^(---+|\*\*\*+|___+)$/ { next }
+/^#+[ \t]/ {
+  n = 0
+  while (substr($0, n + 1, 1) == "#") n++
+  text = substr($0, n + 1)
+  sub(/^[ \t]+/, "", text)
+  text = strip_emphasis(text)
+  if (n == 1) { print text; after_title = 1; next }
+  print substr("######", 1, n + 1 > 6 ? 6 : n + 1) " " text
+  next
+}
+# Keep the title in the same paragraph as the narrative that follows it.
+after_title && /^[ \t]*$/ { next }
+{ after_title = 0 }
+/^[ \t]*\|/ { print; next }
+{
+  prefix = ""
+  indent = ""
+  line = $0
+  if (match(line, /^[ \t]*([-*+]|[0-9]+\.)[ \t]+/) || match(line, /^[ \t]*>[ \t]*/) || match(line, /^[ \t]+/)) {
+    prefix = substr(line, 1, RSTART + RLENGTH - 1)
+    line = substr(line, RSTART + RLENGTH)
+    indent = prefix
+    if (indent ~ />/) indent = "> "
+    else gsub(/[^ \t]/, " ", indent)
+  }
+  line = protect_code(line)
+  line = protect_urls(line)
+  line = strip_emphasis(line)
+  line = escape_tags(line)
+  line = split_sentences(line, indent)
+  print prefix unhide(line)
+}
+AWK
+
+# Puts exactly one blank line around headings, lists and code fences and
+# collapses runs of blank lines (markdownlint MD012, MD022, MD031, MD032).
+read -r -d '' SPACING_AWK <<'AWK' || true
+function kind(l) {
+  if (l ~ /^[ \t]*$/) return "blank"
+  if (l ~ /^(```|~~~)/) return "fence"
+  if (l ~ /^#+ /) return "heading"
+  if (l ~ /^[ \t]*([-*+]|[0-9]+\.)[ \t]/) return "item"
+  if (l ~ /^[ \t]+[^ \t]/ && (last == "item" || last == "cont")) return "cont"
+  return "text"
+}
+in_fence { print; if ($0 ~ /^(```|~~~)/) { in_fence = 0; last = "fence" } ; next }
+{
+  k = kind($0)
+  if (k == "blank") { pending = 1; next }
+  need = pending
+  if (last == "heading" || k == "heading" || last == "fence" || k == "fence") need = 1
+  if (k == "item" && last != "item" && last != "cont") need = 1
+  if ((last == "item" || last == "cont") && k != "item" && k != "cont") need = 1
+  if (need && last != "") print ""
+  print
+  pending = 0
+  last = k
+  if (k == "fence") in_fence = 1
+}
+AWK
+
+# Prints the block that goes into the daily note for one summary file.
+render_section() {
+  local summary=$1 generated_by url
+  generated_by=$(frontmatter_value "$summary" generated_by)
+  # Only spaces need escaping in the paths this script handles; a full encoder would need python.
+  url="file://$(printf '%s' "$summary" | sed 's/%/%25/g; s/ /%20/g')"
+
+  printf '%s\n\n## Ambient Context\n\n' "$START_MARKER"
+  printf 'Source: [Summaries/%s](%s)' "$(basename "$summary")" "$url"
+  [ -n "$generated_by" ] && printf ' · generated_by: %s' "$generated_by"
+  printf '\n\n'
+  awk "$BODY_AWK" "$summary" | awk "$SPACING_AWK"
+  printf '\n%s\n' "$END_MARKER"
+}
+
+# Prints the note with its managed block replaced, or appended when absent.
+# Exits 2 when the markers are unbalanced, so a damaged note is never rewritten.
+merge_note() {
+  local note=$1 section=$2
+  awk -v start="$START_MARKER" -v end="$END_MARKER" -v section="$section" '
+    BEGIN { while ((getline line < section) > 0) block = block line "\n" }
+    { lines[++n] = $0 }
+    $0 == start { starts++; if (!s) s = n }
+    $0 == end { ends++; if (!e) e = n }
+    END {
+      if (starts != ends || starts > 1 || (starts && e < s)) exit 2
+      if (starts) {
+        for (i = 1; i < s; i++) print lines[i]
+        printf "%s", block
+        for (i = e + 1; i <= n; i++) print lines[i]
+      } else {
+        for (i = 1; i <= n; i++) print lines[i]
+        if (n && lines[n] != "") print ""
+        printf "%s", block
+      }
+    }
+  ' "$note"
+}
+
+# Prints the note with every wanted tag present in its frontmatter. Existing
+# tags and other keys are kept; a missing frontmatter or tags key is created.
+ensure_tags() {
+  awk -v want="$1" '
+    BEGIN { nw = split(want, w, " ") }
+    { lines[++n] = $0 }
+    function emit_tags(   j) {
+      print "tags:"
+      for (j = 1; j <= nhave; j++) print "  - " have_list[j]
+      for (j = 1; j <= nw; j++) if (!(w[j] in have)) { print "  - " w[j]; have[w[j]] = 1 }
+    }
+    function add(t) {
+      gsub(/["\047]/, "", t); sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t)
+      if (t != "" && !(t in have)) { have[t] = 1; have_list[++nhave] = t }
+    }
+    END {
+      close_fm = 0
+      if (lines[1] == "---") for (i = 2; i <= n; i++) if (lines[i] == "---") { close_fm = i; break }
+      if (!close_fm) {
+        print "---"; emit_tags(); print "---"
+        if (n && lines[1] != "") print ""
+        for (i = 1; i <= n; i++) print lines[i]
+        exit
+      }
+      t = 0
+      for (i = 2; i < close_fm; i++) if (lines[i] ~ /^tags:/) { t = i; break }
+      if (!t) {
+        for (i = 1; i < close_fm; i++) print lines[i]
+        emit_tags()
+        for (i = close_fm; i <= n; i++) print lines[i]
+        exit
+      }
+      v = lines[t]; sub(/^tags:[ \t]*/, "", v); last_t = t
+      if (v ~ /^\[/) { gsub(/[][]/, "", v); m = split(v, a, ","); for (j = 1; j <= m; j++) add(a[j]) }
+      else if (v != "") add(v)
+      else for (i = t + 1; i < close_fm && lines[i] ~ /^[ \t]*- /; i++) { x = lines[i]; sub(/^[ \t]*- /, "", x); add(x); last_t = i }
+      for (i = 1; i < t; i++) print lines[i]
+      emit_tags()
+      for (i = last_t + 1; i <= n; i++) print lines[i]
+    }
+  '
+}
+
+sync_one() {
+  local summary=$1 section merged status=0
+  section=$(mktemp)
+  merged=$(mktemp "$DAILY_DIR/.ambient-sync.XXXXXX")
+  # Explicit cleanup instead of a RETURN trap: that trap is shell-wide and would
+  # also fire when the helpers called below return, deleting files still in use.
+  write_note "$summary" "$section" "$merged" || status=$?
+  rm -f "$section" "$merged"
+  return "$status"
+}
+
+write_note() {
+  local summary=$1 section=$2 merged=$3 note mode tags
+  note="$DAILY_DIR/$(basename "$summary")"
+  tags="$FIXED_TAGS $(summary_tags "$summary")"
+
+  render_section "$summary" >"$section"
+  if [ -f "$note" ]; then
+    if ! merge_note "$note" "$section" | ensure_tags "$tags" >"$merged"; then
+      log "ERROR $note: unbalanced ambient-context markers, left untouched"
+      return 1
+    fi
+    if cmp -s "$note" "$merged"; then
+      return 0
+    fi
+    mode=$(stat -f %Lp "$note")
+  else
+    # A new note gets the date as its H1 so markdownlint (MD041) has a top-level heading.
+    { printf '# %s\n\n' "$(basename "$summary" .md)" && cat "$section"; } | ensure_tags "$tags" >"$merged"
+    mode=644
+  fi
+  # Rename within the same directory so Obsidian and iCloud never see a half-written note.
+  chmod "$mode" "$merged"
+  mv "$merged" "$note"
+  UPDATED=$((UPDATED + 1))
+  log "updated $note"
+}
+
+main() {
+  if [ ! -d "$SUMMARIES_DIR" ] || [ ! -d "$DAILY_DIR" ]; then
+    log "ERROR missing directory: $SUMMARIES_DIR or $DAILY_DIR"
+    notify_failure "Folder not found. See ~/Library/Logs/ambient-obsidian-sync.log"
+    exit 1
+  fi
+  # Privacy protection (TCC) lets launchd jobs see these folders but not list
+  # them, and a find failure inside the process substitution below would not
+  # reach the exit status, so probe both folders explicitly first.
+  if ! ls "$SUMMARIES_DIR" >/dev/null 2>&1 || ! ls "$DAILY_DIR" >/dev/null 2>&1; then
+    log "ERROR cannot read $SUMMARIES_DIR or $DAILY_DIR (privacy protection?)"
+    notify_failure "No permission to read the folders. See ~/Library/Logs/ambient-obsidian-sync.log"
+    exit 1
+  fi
+
+  local checked=0 failures=0 summary
+  UPDATED=0
+  while IFS= read -r -d '' summary; do
+    checked=$((checked + 1))
+    sync_one "$summary" || failures=$((failures + 1))
+  done < <(find "$SUMMARIES_DIR" -maxdepth 1 -type f -name '????-??-??.md' -mtime "-$MAX_AGE_DAYS" -print0)
+
+  # Logged on every run, including no-ops: without it a run that changed
+  # nothing leaves the log exactly as silent as a run that never started.
+  log "checked $checked summaries, updated $UPDATED, failed $failures"
+  if [ "$failures" -gt 0 ]; then
+    notify_failure "$failures note(s) failed. See ~/Library/Logs/ambient-obsidian-sync.log"
+    exit 1
+  fi
+}
+
+main "$@"

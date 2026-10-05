@@ -43,6 +43,10 @@
   - [通知が表示されない（macOS）](#通知が表示されないmacos)
   - [通知が表示されない（Linux）](#通知が表示されないlinux)
   - [statuslineが正しく表示されない](#statuslineが正しく表示されない)
+- [Ambient Context / Obsidian連携](#ambient-context--obsidian連携)
+  - [Daily Noteに要約が書き込まれない](#daily-noteに要約が書き込まれない)
+  - [「unbalanced ambient-context markers」で失敗する](#unbalanced-ambient-context-markersで失敗する)
+  - [タグが付かない・Markdownが崩れる](#タグが付かないmarkdownが崩れる)
 - [ツール別の問題](#ツール別の問題)
   - [Homebrew / Linuxbrewの問題](#homebrew--linuxbrewの問題)
   - [topgradeの更新が失敗する](#topgradeの更新が失敗する)
@@ -775,6 +779,99 @@ cz-emoji は bin を持たないアダプタなので npm バックエンドツ�
 chezmoi apply   # run_onchange の再実行で再導入。または手動で:
 mise exec node@lts -- npm install --global --prefix "${HOME}/.local/share/cz-emoji" cz-emoji
 ```
+
+## Ambient Context / Obsidian連携
+
+Ambient Contextには要約後のフックが無いため、LaunchAgent（`jp.co.sforzando.ambient-obsidian-sync`）が
+`~/Documents/Ambient Context/Summaries/` を `WatchPaths` で監視し、変化のたびに
+`~/Applications/AmbientObsidianSync.app` 経由で `~/.local/bin/ambient-obsidian-sync` を実行する。
+スクリプトは最終更新から7日以内の要約だけを、Daily Noteの `<!-- ambient-context:start -->` 〜 `end` の範囲に書き込む。
+
+### Daily Noteに要約が書き込まれない
+
+**症状**: Ambient Contextの要約（`Summaries/YYYY-MM-DD.md`）はあるのに、Obsidianの `Daily/YYYY-MM-DD.md` に反映されない
+
+**原因**:
+
+- `AmbientObsidianSync.app` に「書類」と「iCloud Drive」へのアクセスが許可されていない。
+  `run_onchange` がアプリを再生成すると署名が変わり、許可が外れることがある
+- 要約が7日より古い（意図的に削除したノートを復活させないための制限）
+- そもそもAmbient Contextが要約を作っていない
+
+**診断:**
+
+```bash
+# 直近の実行結果（"Operation not permitted" や "privacy protection?" ならアクセス許可の問題）
+# 正常に走った実行は毎回 "checked N summaries, updated M, failed K" を1行残す。
+# この行が増えていなければスクリプト自体が起動していない（許可ダイアログ待ちで止まっている等）
+tail -n 20 ~/Library/Logs/ambient-obsidian-sync.log
+
+# 許可ダイアログ待ちで止まったアプレットが残っていないか
+pgrep -fl AmbientObsidianSync.app
+
+# LaunchAgentが読み込まれているか、最後の終了コード
+launchctl print "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync" | grep -E 'state|last exit'
+
+# Ambient Context側の処理記録（summarise_day が accepted か）
+grep -nE '^## [0-9:]+ · summarise_day|^- disposition' ~/Documents/Ambient\ Context/Ledger/*.md | tail
+```
+
+**解決方法:**
+
+```bash
+# 手動で同期を実行（許可ダイアログが出たら「許可」）
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
+
+# ダイアログが出ないまま拒否される場合は、許可をリセットしてから再実行
+tccutil reset All jp.co.sforzando.ambient-obsidian-sync
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
+```
+
+> [!NOTE]
+> `/bin/bash` 自体にフルディスクアクセスを与えれば動くが、launchdから動くすべてのbashスクリプトに
+> ディスク全体の権限が及ぶため使わない。専用アプレットを挟んでいるのはこのため。
+
+### 「unbalanced ambient-context markers」で失敗する
+
+**症状**: 失敗通知が出て、ログに `unbalanced ambient-context markers, left untouched` と記録される
+
+**原因**: Daily Note内の `<!-- ambient-context:start -->` / `<!-- ambient-context:end -->` の片方を消した、
+または重複させた。スクリプトは管理範囲を特定できないノートを書き換えない
+
+**解決方法:**
+
+マーカーを対で戻すか、マーカー2行とその間を丸ごと削除してから同期を再実行する（削除した場合は末尾に追記し直される）。
+
+```bash
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
+```
+
+### タグが付かない・Markdownが崩れる
+
+**症状**: Daily Noteに話題タグが付かない、Markdownlintが通らない、`#数字` がタグとして扱われる
+
+**原因**: Ambient Contextに改修版の `day-context` プロンプトが反映されていない、またはスクリプトの整形処理の退行
+
+**診断:**
+
+```bash
+# 改修版プロンプトが反映されていれば、このディレクトリに day-context.md がある
+ls ~/Library/Application\ Support/com.0x0000007a.ambientcontext/prompts/
+
+# 整形処理の回帰テスト（launchdと同じ /bin/bash 3.2 と BSD awk で動かす）
+cd ~/.local/share/chezmoi
+/bin/bash tests/ambient-obsidian-sync.sh
+
+# Daily Note自体のlint（Vault直下の .markdownlint-cli2.jsonc が MD013 を無効化している）
+cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents
+markdownlint-cli2 "Daily/*.md"
+```
+
+**解決方法:**
+
+- プロンプト未反映なら、Ambient ContextのAgentタブで `day-context` を `assets/ambient-context/day-context.md` の内容に置き換える
+- テストが落ちるならスクリプトを修正する。BSD awkは文字列比較にロケールの照合順序を使うため、
+  スクリプトは `LC_ALL=C` を前提にしている（外すと「。」と「」」が等しいと判定される）
 
 ## ツール別の問題
 

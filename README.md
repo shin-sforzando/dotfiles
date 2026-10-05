@@ -115,6 +115,21 @@ sudo tailscale up --ssh
 # The lefthook binary is installed via Brewfile, but hooks must be activated once per clone.
 cd ~/.local/share/chezmoi
 lefthook install
+
+# 6. (macOS) Ambient Context -> Obsidian daily notes
+# chezmoi deploys the sync script and its LaunchAgent; everything below lives in
+# app settings or macOS privacy grants, which chezmoi cannot write.
+# a. Install Ambient Context from its signed DMG (it has no Homebrew cask):
+#    https://github.com/dragthelake/ambient-context/releases
+#    Grant Accessibility when asked and keep the default folder ~/Documents/Ambient Context.
+# b. Agent tab: connect Claude Code (model claude-sonnet-5, effort medium) and set
+#    the daily schedule to 06:00.
+# c. Agent tab prompt editor: replace day-context with
+#    assets/ambient-context/day-context.md (editing through the app validates the
+#    prompt and records it in the Ledger, which copying the file would skip).
+# d. Trigger the first sync, then allow AmbientObsidianSync to access the
+#    Documents folder and iCloud Drive in the dialogs that follow.
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
 ```
 
 > [!NOTE]
@@ -214,8 +229,14 @@ This repository manages configurations for the following applications:
 | **topgrade** | System update manager                   | `~/.config/topgrade.toml`                  |
 | **Atuin**    | Shell history sync (E2E encrypted)      | `~/.config/atuin/`                         |
 | **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
+| **Ambient Context sync** | Copies day summaries into Obsidian daily notes (macOS) | `~/.local/bin/ambient-obsidian-sync`, `~/Library/LaunchAgents/` |
 
 > [!NOTE]
+> The Ambient Context sync runs through a generated `~/Applications/AmbientObsidianSync.app`
+> so it can hold its own privacy grants. After editing the script, run
+> `/bin/bash tests/ambient-obsidian-sync.sh` from this repo; problems are covered in
+> [Troubleshooting](./TROUBLESHOOTING.md#ambient-context--obsidian連携).
+>
 > Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
 >
 > SSH uses [Tailscale SSH](https://tailscale.com/kb/1193/tailscale-ssh) (keyless, by

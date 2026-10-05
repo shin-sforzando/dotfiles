@@ -55,3 +55,12 @@ Brewfile
 # Lefthook config governs this repo's own hooks; not a dotfile to deploy
 lefthook.yml
 .markdownlint-cli2.jsonc
+
+# Tests for scripts in this repo; run from the source checkout, never deployed
+tests/
+
+# Ambient Context and its LaunchAgent exist only on macOS
+{{ if ne .chezmoi.os "darwin" }}
+Library/
+.local/bin/ambient-obsidian-sync
+{{ end }}

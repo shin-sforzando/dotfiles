@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Ambient Context has no post-summary hook, so this agent watches its Summaries/
+  folder and lets ambient-obsidian-sync copy each summary into the Obsidian daily note.
+  RunAtLoad catches up on summaries written while the agent was not loaded.
+  The script runs through AmbientObsidianSync.app, launched with `open` so the app
+  is its own responsible process and can hold the privacy (TCC) grants.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>jp.co.sforzando.ambient-obsidian-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/open</string>
+    <string>-g</string>
+    <string>{{ .chezmoi.homeDir }}/Applications/AmbientObsidianSync.app</string>
+  </array>
+  <key>WatchPaths</key>
+  <array>
+    <string>{{ .chezmoi.homeDir }}/Documents/Ambient Context/Summaries</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>{{ .chezmoi.homeDir }}/Library/Logs/ambient-obsidian-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>{{ .chezmoi.homeDir }}/Library/Logs/ambient-obsidian-sync.log</string>
+</dict>
+</plist>

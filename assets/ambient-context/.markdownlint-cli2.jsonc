@@ -1,0 +1,7 @@
+{
+  "config": {
+    // Files here are prompt text pasted into Ambient Context, not documents; adding an H1
+    // would change what the model reads
+    "MD041": false
+  }
+}
