@@ -231,12 +231,16 @@ This repository manages configurations for the following applications:
 | **Atuin**    | Shell history sync (E2E encrypted)      | `~/.config/atuin/`                         |
 | **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
 | **ambient-daily** | Writes Obsidian daily notes from Ambient Context's KB (macOS) | `~/.local/bin/ambient-daily`, `~/.config/ambient-daily/`, `~/Library/LaunchAgents/` |
+| **Claude Desktop MCP** | Merges the `ambient-context` MCP server into Desktop's config (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` (`mcpServers` only) |
 
 > [!NOTE]
 > ambient-daily runs through a generated `~/Applications/AmbientDaily.app` so it can hold
 > its own privacy grants. After editing the script or its prompt, run
 > `/usr/bin/python3 -m unittest discover -s tests -p test_ambient_daily.py` from this repo;
 > problems are covered in [Troubleshooting](./TROUBLESHOOTING.md#ambient-context--obsidian連携).
+>
+> Claude Desktop rewrites its config while running and keeps an API key in it, so only the
+> `mcpServers` entries are merged in with jq. Restart Claude Desktop after `chezmoi apply`.
 >
 > Yazi plugins are automatically installed/updated via `run_onchange` script when `package.toml` changes.
 >

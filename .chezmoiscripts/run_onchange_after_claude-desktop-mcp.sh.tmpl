@@ -1,0 +1,56 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+# Claude Desktop keeps its own preferences, an Obsidian API key and window state in
+# the same file as mcpServers, and rewrites it while running. Managing the whole file
+# would leak the key into git and fight the app, so only the entries below are merged
+# in and everything else is left as Desktop wrote it.
+#
+# run_onchange keys off this file's own contents, so editing a definition below is
+# what re-triggers the merge. Restart Claude Desktop afterwards: it reads the file
+# only at launch.
+
+config="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+
+if [ ! -f "$config" ]; then
+  echo "⚠️  $config not found, skipping Claude Desktop MCP registration"
+  exit 0
+fi
+
+if ! command -v jq &>/dev/null; then
+  echo "⚠️  jq not found, skipping Claude Desktop MCP registration"
+  exit 0
+fi
+
+echo "🔌 Merging MCP servers into Claude Desktop config..."
+
+# Written next to the original so the final mv is an atomic rename on one volume,
+# and Desktop never reads a half-written file.
+tmp=$(mktemp "$config.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+
+# ambient-context: the app binary doubles as a stdio MCP server (docs/mcp.md upstream).
+# Reads work with the app closed; writes go through the running app and are ledgered.
+#
+# obsidian-mcp-tools: the plugin's installer wrote the command without its leading
+# slash, so Desktop resolved it as a relative path and the server never started.
+# The repair only prefixes a missing slash and leaves the entry (and its key) alone.
+jq --indent 2 '
+  .mcpServers["ambient-context"] = {
+    "command": "/Applications/Ambient Context.app/Contents/MacOS/ambient-context",
+    "args": ["mcp"]
+  }
+  | if (.mcpServers["obsidian-mcp-tools"].command // "" | startswith("Users/"))
+    then .mcpServers["obsidian-mcp-tools"].command |= "/" + .
+    else . end
+' "$config" >"$tmp"
+
+# mktemp creates 0600 already; keep it explicit because the file holds an API key.
+chmod 600 "$tmp"
+mv "$tmp" "$config"
+trap - EXIT
+
+echo "✅ Claude Desktop MCP servers merged; restart Claude Desktop to load them"
+{{- end }}
