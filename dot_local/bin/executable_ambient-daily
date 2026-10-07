@@ -1,0 +1,800 @@
+#!/usr/bin/python3
+"""Writes the Ambient Context section of each Obsidian daily note.
+
+Ambient Context records the screen and builds a cited knowledge base (KB).
+This script owns everything after that: it asks Ambient Context for the KB,
+has Claude turn timeline + KB into structured JSON, and renders that JSON
+into the note itself, so the note's format never depends on model output.
+
+Only read_timeline() and ensure_kb() know about Ambient Context; swapping the
+capture tool means replacing those two functions.
+
+Runs on /usr/bin/python3 (3.9) with the standard library only, because
+launchd starts it without Homebrew on PATH.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import fcntl
+import hashlib
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+from collections import Counter
+from collections.abc import Callable
+from dataclasses import dataclass, replace
+from pathlib import Path
+
+HOME = Path.home()
+HEADING_RE = re.compile(r"^## (\d{2}):(\d{2})[–-](\d{2}):(\d{2}) · (.*)$")
+RANGE_RE = re.compile(r"^\s*(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})\s*$")
+DAY_MINUTES = 1440
+
+
+@dataclass
+class Config:
+    ac_root: Path
+    vault: Path
+    socket: Path
+    prompt_file: Path
+    claude: str = "/opt/homebrew/bin/claude"
+    model: str = "claude-sonnet-5"
+    # Ingest runs three agent calls of up to 600 s each, one after another.
+    kb_wait: float = 2100.0
+    poll: float = 15.0
+    claude_timeout: float = 600.0
+    window_days: int = 7
+    lock_file: Path = HOME / ".local/state/ambient-daily.lock"
+    notify: bool = True
+
+    @property
+    def daily_dir(self) -> Path:
+        return self.vault / "Daily"
+
+
+def load_config() -> Config:
+    env = os.environ.get
+    return Config(
+        ac_root=Path(env("AMBIENT_DAILY_AC_ROOT", str(HOME / "Documents/Ambient Context"))),
+        vault=Path(env("AMBIENT_DAILY_VAULT", str(HOME / "Library/Mobile Documents/iCloud~md~obsidian/Documents"))),
+        socket=Path(
+            env(
+                "AMBIENT_DAILY_SOCKET",
+                str(HOME / "Library/Application Support/com.0x0000007a.ambientcontext/control.sock"),
+            )
+        ),
+        prompt_file=Path(env("AMBIENT_DAILY_PROMPT", str(HOME / ".config/ambient-daily/note-prompt.md"))),
+        claude=env("AMBIENT_DAILY_CLAUDE", "/opt/homebrew/bin/claude"),
+        model=env("AMBIENT_DAILY_MODEL", "claude-sonnet-5"),
+        notify=env("AMBIENT_DAILY_NOTIFY", "1") == "1",
+    )
+
+
+def log(message: str) -> None:
+    stamp = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    print(f"{stamp} {message}", file=sys.stderr, flush=True)
+
+
+# --- Timeline (Ambient Context specific) -------------------------------------
+
+
+@dataclass(frozen=True)
+class Block:
+    start: int
+    end: int
+    app: str
+    title: str
+    ref: str = ""
+
+
+def parse_timeline(text: str) -> list[Block]:
+    blocks: list[Block] = []
+    for line in text.splitlines():
+        match = HEADING_RE.match(line)
+        if match:
+            sh, sm, eh, em, rest = match.groups()
+            start = int(sh) * 60 + int(sm)
+            end = int(eh) * 60 + int(em)
+            # Ambient Context closes the last block of the day at 00:00.
+            if end < start:
+                end += DAY_MINUTES
+            app, _, title = rest.partition(" · ")
+            blocks.append(Block(start, end, app.strip(), title.strip()))
+            continue
+        if blocks and not blocks[-1].ref:
+            for key in ("url: ", "file: "):
+                value = line[len(key) :].strip() if line.startswith(key) else ""
+                if value:
+                    blocks[-1] = replace(blocks[-1], ref=value)
+                    break
+    return blocks
+
+
+def read_timeline(cfg: Config, date: dt.date) -> list[Block]:
+    path = cfg.ac_root / "Days" / date.isoformat() / "apps.md"
+    try:
+        return parse_timeline(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+
+
+def fmt_minutes(minute: int) -> str:
+    minute %= DAY_MINUTES
+    return f"{minute // 60:02d}:{minute % 60:02d}"
+
+
+def timeline_text(blocks: list[Block]) -> str:
+    lines = []
+    for block in blocks:
+        parts = [f"{fmt_minutes(block.start)}-{fmt_minutes(block.end)}", block.app, block.title, block.ref]
+        lines.append(" · ".join(part for part in parts if part))
+    return "\n".join(lines)
+
+
+def _snap(minute: int, blocks: list[Block]) -> int:
+    for block in blocks:
+        if block.start <= minute <= block.end:
+            return minute
+    edges = [edge for block in blocks for edge in (block.start, block.end)]
+    return min(edges, key=lambda edge: (abs(edge - minute), edge))
+
+
+def snap_range(value: str, blocks: list[Block]) -> str | None:
+    """Pulls a model-chosen range onto captured time.
+
+    Models round to 13:00 and the like; snapping each end to the nearest
+    block edge keeps the citation checkable without a retry round trip.
+    """
+    match = RANGE_RE.match(value or "")
+    if not match or not blocks:
+        return None
+    sh, sm, eh, em = (int(group) for group in match.groups())
+    if sh > 24 or eh > 24 or sm > 59 or em > 59:
+        return None
+    start, end = sh * 60 + sm, eh * 60 + em
+    if end < start:
+        end += DAY_MINUTES
+    start, end = _snap(start, blocks), _snap(end, blocks)
+    if end < start:
+        start, end = end, start
+    return f"{fmt_minutes(start)}-{fmt_minutes(end)}"
+
+
+# --- Knowledge base (Ambient Context specific) --------------------------------
+
+KB_FILES = ("people.md", "commitments.md", "threads.md", "products.md", "issues.md", "reading.md")
+DISPOSITION_RE = re.compile(r"^(ingest_\w+)\.disposition:\s*(.*)$")
+
+
+def split_frontmatter(text: str) -> tuple[list[str] | None, list[str]]:
+    lines = text.splitlines()
+    if lines and lines[0] == "---":
+        for index in range(1, len(lines)):
+            if lines[index] == "---":
+                return lines[1:index], lines[index + 1 :]
+    return None, lines
+
+
+def _dispositions(kb_dir: Path) -> dict[str, str]:
+    manifest = kb_dir / "manifest.md"
+    if not manifest.exists():
+        return {}
+    frontmatter, _ = split_frontmatter(manifest.read_text(encoding="utf-8"))
+    dispositions = {}
+    for line in frontmatter or []:
+        match = DISPOSITION_RE.match(line)
+        if match:
+            dispositions[match.group(1)] = match.group(2).strip()
+    return dispositions
+
+
+def _has_rejection(kb_dir: Path) -> bool:
+    return any(value.startswith("rejected") for value in _dispositions(kb_dir).values())
+
+
+def kb_is_ready(kb_dir: Path) -> bool:
+    """Judges the KB by its manifest rather than by job status.
+
+    Job ids restart at job-0 whenever Ambient Context restarts, so the
+    files it leaves behind are the only evidence that survives.
+    """
+    dispositions = _dispositions(kb_dir)
+    if not dispositions:
+        return False
+    if any(value.startswith("rejected") for value in dispositions.values()):
+        return False
+    if dispositions.get("ingest_apps") not in ("accepted", "skipped"):
+        return False
+    return all((kb_dir / name).exists() for name in KB_FILES)
+
+
+def read_kb(kb_dir: Path) -> str:
+    sections = []
+    for name in KB_FILES:
+        _, body = split_frontmatter((kb_dir / name).read_text(encoding="utf-8"))
+        content = "\n".join(body).strip()
+        if content and content != "Nothing evident.":
+            sections.append(f"### {name}\n\n{content}")
+    return "\n\n".join(sections)
+
+
+def control_request(path: Path, payload: dict, timeout: float = 10.0) -> dict:
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.settimeout(timeout)
+        sock.connect(str(path))
+        sock.sendall((json.dumps(payload) + "\n").encode("utf-8"))
+        buffer = b""
+        while not buffer.endswith(b"\n"):
+            chunk = sock.recv(65536)
+            if not chunk:
+                break
+            buffer += chunk
+    return json.loads(buffer.decode("utf-8"))
+
+
+def ensure_kb(
+    cfg: Config,
+    date: dt.date,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> bool:
+    """Asks Ambient Context to build the day's KB and reports whether it is usable.
+
+    A KB written after the day's capture is reused as is; asking again would
+    only queue a job that Ambient Context skips anyway.
+    """
+    kb_dir = cfg.ac_root / "KB" / date.isoformat()
+    apps = cfg.ac_root / "Days" / date.isoformat() / "apps.md"
+    manifest = kb_dir / "manifest.md"
+    if kb_is_ready(kb_dir) and apps.exists() and manifest.stat().st_mtime >= apps.stat().st_mtime:
+        return True
+    # Ambient Context skips ingest calls whose inputs are unchanged, which
+    # would leave a rejected call rejected every morning; forcing a rebuild
+    # gives it another chance (the prompts may have been fixed since).
+    force = _has_rejection(kb_dir)
+    try:
+        reply = control_request(
+            cfg.socket,
+            {"op": "ingest_day", "date": date.isoformat(), "force": force, "client": "ambient-daily"},
+        )
+    except (OSError, ValueError) as err:
+        log(f"{date}: control socket unavailable ({err}); using the existing KB if any")
+        return kb_is_ready(kb_dir)
+    if reply.get("status") != "ok":
+        log(f"{date}: ingest_day refused: {reply.get('body')}")
+        return kb_is_ready(kb_dir)
+    job_id = reply["body"]["job_id"]
+    deadline = clock() + cfg.kb_wait
+    while clock() < deadline:
+        sleep(cfg.poll)
+        try:
+            status = control_request(cfg.socket, {"op": "job_status", "id": job_id})
+        except (OSError, ValueError):
+            break
+        # job_status is not in the documented API and forgets jobs on restart,
+        # so anything other than a live job (done, cancelled, failed object,
+        # not_found) just ends the wait; the manifest decides the outcome.
+        state = status.get("body", {}).get("status") if status.get("status") == "ok" else None
+        if state not in ("queued", "running"):
+            break
+    else:
+        log(f"{date}: KB job {job_id} still running after {cfg.kb_wait:.0f}s")
+    return kb_is_ready(kb_dir)
+
+
+# --- Vault vocabulary ----------------------------------------------------------
+
+INLINE_TAG_RE = re.compile(r"(?:^|\s)#([A-Za-z][\w/-]*)")
+LIST_ITEM_RE = re.compile(r"^\s*- ")
+# A CSS color in prose (#ff6b6b) parses as a tag but is never one.
+HEX_COLOR_RE = re.compile(r"^[0-9a-f]{6}$")
+
+
+def frontmatter_tags(frontmatter: list[str]) -> list[str]:
+    for index, line in enumerate(frontmatter):
+        if not line.startswith("tags:"):
+            continue
+        value = line[len("tags:") :].strip()
+        if value.startswith("["):
+            raw = value.strip("[]").split(",")
+        elif value:
+            raw = [value]
+        else:
+            raw = []
+            for item in frontmatter[index + 1 :]:
+                if not LIST_ITEM_RE.match(item):
+                    break
+                raw.append(item.split("- ", 1)[1])
+        return [tag.strip().strip("'\"") for tag in raw if tag.strip().strip("'\"")]
+    return []
+
+
+def vault_vocabulary(vault: Path) -> tuple[Counter, list[str]]:
+    tags: Counter = Counter()
+    titles = set()
+    for note in vault.rglob("*.md"):
+        rel = note.relative_to(vault)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        try:
+            text = note.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        frontmatter, body = split_frontmatter(text)
+        found = {tag.lower().lstrip("#") for tag in frontmatter_tags(frontmatter or [])}
+        in_fence = False
+        for line in body:
+            if line.lstrip().startswith("```"):
+                in_fence = not in_fence
+            elif not in_fence:
+                found.update(tag.lower() for tag in INLINE_TAG_RE.findall(line))
+        tags.update(tag for tag in found if tag and not HEX_COLOR_RE.match(tag))
+        if rel.parts[0] not in ("Daily", "Templates"):
+            titles.add(note.stem)
+    return tags, sorted(titles)
+
+
+# --- Generation ------------------------------------------------------------------
+
+_TEXT_ITEM = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["text", "range"],
+    "properties": {"text": {"type": "string"}, "range": {"type": "string"}},
+}
+SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["narrative", "time_use", "outcomes", "open", "tags"],
+    "properties": {
+        "narrative": {"type": "array", "minItems": 1, "maxItems": 5, "items": _TEXT_ITEM},
+        "time_use": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["range", "label", "apps"],
+                "properties": {
+                    "range": {"type": "string"},
+                    "label": {"type": "string"},
+                    "apps": {"type": "array", "maxItems": 5, "items": {"type": "string"}},
+                },
+            },
+        },
+        "outcomes": {"type": "array", "maxItems": 12, "items": _TEXT_ITEM},
+        "open": {"type": "array", "maxItems": 10, "items": _TEXT_ITEM},
+        "tags": {"type": "array", "minItems": 1, "maxItems": 6, "items": {"type": "string"}},
+    },
+}
+
+
+class GenerationError(Exception):
+    pass
+
+
+def build_prompt(
+    template: str, date: dt.date, blocks: list[Block], kb_text: str, tags: Counter, titles: list[str]
+) -> str:
+    tag_lines = "\n".join(f"{tag} ({count})" for tag, count in sorted(tags.items(), key=lambda kv: (-kv[1], kv[0])))
+    return (
+        template.replace("{{DATE}}", date.isoformat())
+        .replace("{{TIMELINE}}", timeline_text(blocks))
+        .replace("{{KB}}", kb_text)
+        .replace("{{TAGS}}", tag_lines)
+        .replace("{{NOTES}}", "\n".join(titles))
+    )
+
+
+def input_hash(template: str, blocks: list[Block], kb_text: str) -> str:
+    """Fingerprints what the note is made from.
+
+    Vault tags and titles are left out on purpose: they change whenever the
+    user adds a note, and including them would regenerate a week of notes.
+    """
+    digest = hashlib.sha256()
+    for part in (template, json.dumps(SCHEMA, sort_keys=True), timeline_text(blocks), kb_text):
+        digest.update(part.encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
+def generate(cfg: Config, prompt: str) -> dict:
+    # --safe-mode keeps the user's hooks, plugins and CLAUDE.md out: under
+    # launchd their PATH-dependent hooks fail, and their output styles would
+    # leak into the note. --no-session-persistence keeps the day's activity
+    # out of ~/.claude session history.
+    command = [
+        cfg.claude,
+        "-p",
+        "--safe-mode",
+        "--tools",
+        "",
+        "--no-session-persistence",
+        "--output-format",
+        "json",
+        "--json-schema",
+        json.dumps(SCHEMA),
+        "--model",
+        cfg.model,
+    ]
+    env = dict(os.environ, PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin")
+    try:
+        proc = subprocess.run(
+            command,
+            input=prompt,
+            capture_output=True,
+            text=True,
+            timeout=cfg.claude_timeout,
+            cwd=tempfile.gettempdir(),
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired) as err:
+        raise GenerationError(f"claude did not finish: {err}") from err
+    try:
+        reply = json.loads(proc.stdout)
+    except ValueError as err:
+        raise GenerationError(f"claude exited {proc.returncode}: {proc.stderr.strip()[:300]}") from err
+    output = reply.get("structured_output")
+    if proc.returncode != 0 or reply.get("is_error") or not isinstance(output, dict):
+        raise GenerationError(f"claude failed: {str(reply.get('result'))[:300]}")
+    return output
+
+
+# --- Normalization ---------------------------------------------------------------
+
+FIXED_TAGS = ("daily", "ambient-context")
+KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+ITALIC_RE = re.compile(r"(?<![\w*])\*([^*\s][^*]*?)\*(?!\w)")
+TAG_LIKE_RE = re.compile(r"(^|\s)#(?=[^\s#])")
+BARE_URL_RE = re.compile(r"(?<![<(])(https?://[^\s<>()（）「」。、]+)")
+AUTOLINK_RE = re.compile(r"<(https?://[^\s<>]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)>")
+# markdownlint MD034 flags bare e-mail addresses as well as bare URLs.
+BARE_EMAIL_RE = re.compile(r"(?<![\w.+/:<-])([\w.+-]+@[\w-]+(?:\.[\w-]+)+)")
+LEADING_BLOCK_RE = re.compile(r"^(#+|[-+*]|\d+[.)])(?=\s|$)")
+
+
+@dataclass
+class Note:
+    narrative: list[tuple[str, str]]
+    time_use: list[tuple[str, str, list[str]]]
+    outcomes: list[tuple[str, str]]
+    open: list[tuple[str, str]]
+    tags: list[str]
+
+
+def clean_text(value: str) -> str:
+    """Makes one model-written line safe to drop into the note.
+
+    The schema fixes the shape, but not what goes inside a string: models
+    still bold things, write #1082 (an Obsidian tag) or paste bare URLs.
+    """
+    text = " ".join(value.split())
+    # Unwrap autolinks first so the HTML escaping below cannot mangle them;
+    # BARE_URL_RE wraps every URL again at the end.
+    text = AUTOLINK_RE.sub(r"\1", text)
+    text = text.replace("<", "&lt;").replace(">", "&gt;")
+    text = text.replace("**", "").replace("__", "")
+    text = ITALIC_RE.sub(r"\1", text)
+    if text.count("[[") != text.count("]]"):
+        text = text.replace("[[", "").replace("]]", "")
+    text = TAG_LIKE_RE.sub(r"\1\\#", text)
+    text = BARE_URL_RE.sub(r"<\1>", text)
+    text = BARE_EMAIL_RE.sub(r"<\1>", text)
+    # A narrative line starts a Markdown line, where "# x" or "- x" would
+    # turn into a heading or a list and break the note's structure.
+    return LEADING_BLOCK_RE.sub(r"\\\1", text.strip())
+
+
+def normalize_tags(raw: list, vocab: Counter) -> list[str]:
+    tags: list[str] = []
+    for item in raw:
+        tag = re.sub(r"\s+", "-", str(item).strip().lstrip("#").lower())
+        if not tag or tag in FIXED_TAGS or tag in tags:
+            continue
+        # Existing vault tags pass as they are, even when not kebab-case,
+        # because reusing the user's vocabulary is the point.
+        if tag in vocab or KEBAB_RE.match(tag):
+            tags.append(tag)
+    return tags[:6]
+
+
+def _cited_texts(items: list, blocks: list[Block]) -> list[tuple[str, str]]:
+    result = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        cited = snap_range(str(item.get("range", "")), blocks)
+        # The time range ends the line in place of the closing period, the
+        # house style for cited lines; models add the period only sometimes.
+        text = clean_text(str(item.get("text", ""))).rstrip("。．. ")
+        if cited and text:
+            result.append((text, cited))
+    return result
+
+
+def normalize(raw: dict, blocks: list[Block], vocab: Counter) -> Note | None:
+    time_use = []
+    for item in raw.get("time_use") or []:
+        if not isinstance(item, dict):
+            continue
+        cited = snap_range(str(item.get("range", "")), blocks)
+        label = clean_text(str(item.get("label", "")))
+        apps = [clean_text(str(app)) for app in item.get("apps") or [] if clean_text(str(app))]
+        if cited and label:
+            time_use.append((cited, label, apps))
+    note = Note(
+        narrative=_cited_texts(raw.get("narrative") or [], blocks),
+        time_use=sorted(time_use),
+        outcomes=_cited_texts(raw.get("outcomes") or [], blocks),
+        open=_cited_texts(raw.get("open") or [], blocks),
+        tags=normalize_tags(raw.get("tags") or [], vocab),
+    )
+    if not note.narrative or not note.time_use:
+        return None
+    return note
+
+
+# --- Rendering -------------------------------------------------------------------
+
+START_MARKER = "<!-- ambient-context:start -->"
+END_MARKER = "<!-- ambient-context:end -->"
+META_RE = re.compile(r"^<!-- ambient-daily: in=([0-9a-f]+) tags=(\S*) -->$")
+
+
+def render_section(note: Note, digest: str) -> list[str]:
+    """Renders the managed block.
+
+    Headings are Japanese or already Title Case so Obsidian Linter's
+    capitalize-headings leaves them alone, and every heading and list is
+    fenced by blank lines so heading-blank-lines has nothing to add.
+    """
+    lines = [
+        START_MARKER,
+        f"<!-- ambient-daily: in={digest} tags={','.join(note.tags)} -->",
+        "",
+        "## Ambient Context",
+        "",
+    ]
+    lines += [f"{text} {cited}" for text, cited in note.narrative]
+    lines += ["", "### 時間の使い方", ""]
+    for cited, label, apps in note.time_use:
+        suffix = f"（{', '.join(apps)}）" if apps else ""
+        lines.append(f"- {cited} {label}{suffix}")
+    if note.outcomes:
+        lines += ["", "### 成果", ""] + [f"- {text} {cited}" for text, cited in note.outcomes]
+    if note.open:
+        lines += ["", "### 未完了", ""] + [f"- [ ] {text} {cited}" for text, cited in note.open]
+    lines += ["", END_MARKER]
+    return lines
+
+
+# --- Writing ---------------------------------------------------------------------
+
+
+class MarkerError(Exception):
+    pass
+
+
+def old_meta(body: list[str]) -> tuple[str, list[str]]:
+    for line in body:
+        match = META_RE.match(line)
+        if match:
+            return match.group(1), [tag for tag in match.group(2).split(",") if tag]
+    return "", []
+
+
+def _splice(body: list[str], section: list[str]) -> list[str]:
+    starts = [index for index, line in enumerate(body) if line == START_MARKER]
+    ends = [index for index, line in enumerate(body) if line == END_MARKER]
+    # A note we cannot read the block boundaries of is never rewritten.
+    if len(starts) != len(ends) or len(starts) > 1 or (starts and ends[0] < starts[0]):
+        raise MarkerError("unbalanced ambient-context markers")
+    if starts:
+        return body[: starts[0]] + section + body[ends[0] + 1 :]
+    kept = list(body)
+    while kept and kept[-1] == "":
+        kept.pop()
+    return kept + ([""] if kept else []) + section
+
+
+def _merge_frontmatter(frontmatter: list[str], add: list[str], remove: list[str], now: str, touch: bool) -> list[str]:
+    tags = [tag for tag in frontmatter_tags(frontmatter) if tag not in remove]
+    for tag in add:
+        if tag not in tags:
+            tags.append(tag)
+    tag_lines = ["tags:"] + [f"  - {tag}" for tag in tags]
+    merged: list[str] = []
+    index = 0
+    while index < len(frontmatter):
+        line = frontmatter[index]
+        index += 1
+        if line.startswith("tags:"):
+            merged += tag_lines
+            while index < len(frontmatter) and LIST_ITEM_RE.match(frontmatter[index]):
+                index += 1
+            continue
+        if touch and line.startswith("modified:"):
+            merged.append(f"modified: {now}")
+            continue
+        merged.append(line)
+    if not any(line.startswith("tags:") for line in merged):
+        merged += tag_lines
+    # Obsidian Linter's yaml-timestamp adds these keys itself; writing them in
+    # its format up front keeps the Linter from rewriting the note after us.
+    if not any(line.startswith("modified:") for line in merged):
+        merged.insert(0, f"modified: {now}")
+    if not any(line.startswith("created:") for line in merged):
+        merged.insert(0, f"created: {now}")
+    return merged
+
+
+def compose(existing: str | None, date: dt.date, section: list[str], tags: list[str], now: str, touch: bool) -> str:
+    if existing is None:
+        frontmatter: list[str] = []
+        body = [f"# {date.isoformat()}", ""] + section
+        previous: list[str] = []
+    else:
+        parsed, body = split_frontmatter(existing)
+        # A note that opens like frontmatter but does not close cleanly (a BOM,
+        # trailing spaces) would get a second block stacked on top of the old
+        # YAML; leaving it untouched is the only safe choice.
+        if parsed is None and existing.lstrip("﻿").lstrip().startswith("---"):
+            raise MarkerError("unreadable frontmatter")
+        frontmatter = parsed or []
+        _, previous = old_meta(body)
+        body = _splice(body, section)
+    remove = [tag for tag in previous if tag not in tags and tag not in FIXED_TAGS]
+    frontmatter = _merge_frontmatter(frontmatter, list(FIXED_TAGS) + tags, remove, now, touch)
+    while body and body[0] == "":
+        body = body[1:]
+    while body and body[-1] == "":
+        body = body[:-1]
+    return "\n".join(["---", *frontmatter, "---", "", *body]) + "\n"
+
+
+def write_note(cfg: Config, date: dt.date, section: list[str], tags: list[str], dry_run: bool = False) -> bool:
+    path = cfg.daily_dir / f"{date.isoformat()}.md"
+    existing = path.read_text(encoding="utf-8") if path.exists() else None
+    now = dt.datetime.now().astimezone().isoformat(sep=" ", timespec="seconds")
+    # Compare without bumping `modified` first, so an unchanged note is not
+    # touched at all (no iCloud upload, no Obsidian reload).
+    if existing is not None and compose(existing, date, section, tags, now, touch=False) == existing:
+        return False
+    content = compose(existing, date, section, tags, now, touch=True)
+    if dry_run:
+        sys.stdout.write(content)
+        return True
+    fd, temp = tempfile.mkstemp(dir=path.parent, prefix=".ambient-daily.")
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(content)
+    os.chmod(temp, 0o644 if existing is None else path.stat().st_mode & 0o777)
+    # Rename within the folder so Obsidian and iCloud never see a half-written note.
+    os.replace(temp, path)
+    return True
+
+
+# --- Orchestration ---------------------------------------------------------------
+
+
+def target_dates(cfg: Config, today: dt.date) -> list[dt.date]:
+    """Finished days of the past week that have a capture.
+
+    Today is excluded: its capture is still growing, so its input hash would
+    change on every run and regenerate the note each time.
+    """
+    days_dir = cfg.ac_root / "Days"
+    if not days_dir.is_dir():
+        return []
+    earliest = today - dt.timedelta(days=cfg.window_days)
+    dates = []
+    for entry in sorted(days_dir.iterdir()):
+        try:
+            date = dt.date.fromisoformat(entry.name)
+        except ValueError:
+            continue
+        if earliest <= date < today and (entry / "apps.md").exists():
+            dates.append(date)
+    return dates
+
+
+def process_day(cfg: Config, date: dt.date, force: bool = False, dry_run: bool = False) -> str:
+    blocks = read_timeline(cfg, date)
+    if not blocks:
+        return "skipped"
+    if not ensure_kb(cfg, date):
+        log(f"{date}: KB is not usable; the note is left alone until it is")
+        return "failed"
+    kb_text = read_kb(cfg.ac_root / "KB" / date.isoformat())
+    template = cfg.prompt_file.read_text(encoding="utf-8")
+    digest = input_hash(template, blocks, kb_text)
+    path = cfg.daily_dir / f"{date.isoformat()}.md"
+    if not force and path.exists():
+        _, body = split_frontmatter(path.read_text(encoding="utf-8"))
+        if old_meta(body)[0] == digest:
+            return "skipped"
+    vocab, titles = vault_vocabulary(cfg.vault)
+    try:
+        raw = generate(cfg, build_prompt(template, date, blocks, kb_text, vocab, titles))
+    except GenerationError as err:
+        log(f"{date}: {err}")
+        return "failed"
+    note = normalize(raw, blocks, vocab)
+    if note is None:
+        log(f"{date}: generated content had no usable narrative or time use")
+        return "failed"
+    try:
+        changed = write_note(cfg, date, render_section(note, digest), note.tags, dry_run)
+    except MarkerError as err:
+        log(f"{date}: {path}: {err}; left untouched")
+        return "failed"
+    if changed:
+        log(f"{date}: {'would write' if dry_run else 'wrote'} {path}")
+    return "generated" if changed else "skipped"
+
+
+def _process_day_safely(cfg: Config, date: dt.date, force: bool, dry_run: bool) -> str:
+    # One day's surprise (a malformed socket reply, an unreadable note, a
+    # missing prompt) must not stop the other days or skip the summary line
+    # and notification; the applet swallows uncaught errors silently.
+    try:
+        return process_day(cfg, date, force, dry_run)
+    except Exception as err:
+        log(f"{date}: unexpected {type(err).__name__}: {err}")
+        return "failed"
+
+
+def notify_failure(cfg: Config, message: str) -> None:
+    if not cfg.notify:
+        return
+    # A failed morning run is otherwise invisible until someone opens the log.
+    script = f'display notification "{message}" with title "ambient-daily"'
+    subprocess.run(["osascript", "-e", script], capture_output=True, check=False)
+
+
+def main(argv: list[str] | None = None, cfg: Config | None = None, today: dt.date | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Write the Ambient Context section of Obsidian daily notes.")
+    parser.add_argument("--date", type=dt.date.fromisoformat, help="process only this day (YYYY-MM-DD)")
+    parser.add_argument("--force", action="store_true", help="regenerate even if the inputs are unchanged")
+    parser.add_argument("--dry-run", action="store_true", help="print the note instead of writing it")
+    args = parser.parse_args(argv)
+    cfg = cfg or load_config()
+    today = today or dt.date.today()
+    cfg.lock_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(cfg.lock_file, "w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            log("another run is in progress; exiting")
+            return 0
+        try:
+            # Privacy protection (TCC) shows up here as PermissionError when the
+            # applet has not been granted Documents or iCloud Drive access.
+            os.listdir(cfg.ac_root / "Days")
+            os.listdir(cfg.daily_dir)
+        except OSError as err:
+            log(f"ERROR cannot read the capture or the vault: {err}")
+            notify_failure(cfg, "Cannot read Ambient Context or the vault. See ~/Library/Logs/ambient-daily.log")
+            return 1
+        dates = [args.date] if args.date else target_dates(cfg, today)
+        counts: Counter = Counter(_process_day_safely(cfg, date, args.force, args.dry_run) for date in dates)
+        log(
+            f"checked {len(dates)} days, generated {counts['generated']}, "
+            f"skipped {counts['skipped']}, failed {counts['failed']}"
+        )
+        if counts["failed"]:
+            notify_failure(cfg, f"{counts['failed']} day(s) failed. See ~/Library/Logs/ambient-daily.log")
+            return 1
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

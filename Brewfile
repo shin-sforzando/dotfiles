@@ -229,6 +229,9 @@ brew "topgrade"
 # CLI translator using Google Translate and more
 brew "translate-shell"
 
+# Source code spell checker; enforces en-US spelling on staged files via lefthook
+brew "typos-cli"
+
 # Ultra fast grep with interactive TUI
 brew "ugrep"
 

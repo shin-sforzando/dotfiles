@@ -1,16 +1,16 @@
 {{- if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
-# plist hash: {{ include "private_Library/LaunchAgents/jp.co.sforzando.ambient-obsidian-sync.plist.tmpl" | sha256sum }}
+# plist hash: {{ include "private_Library/LaunchAgents/jp.co.sforzando.ambient-daily.plist.tmpl" | sha256sum }}
 
 set -eufo pipefail
 
-label="jp.co.sforzando.ambient-obsidian-sync"
+label="jp.co.sforzando.ambient-daily"
 plist="$HOME/Library/LaunchAgents/$label.plist"
-app="$HOME/Applications/AmbientObsidianSync.app"
+app="$HOME/Applications/AmbientDaily.app"
 
-# Privacy protection (TCC) silently denies a launchd-spawned /bin/bash access to
-# ~/Documents and iCloud Drive, and granting bash itself would cover every script.
-# A dedicated applet gets its own grant, and the sync script it runs inherits it.
+# Privacy protection (TCC) silently denies a launchd-spawned interpreter access
+# to ~/Documents and iCloud Drive, and granting python3 itself would cover every
+# script. A dedicated applet gets its own grant, and the script it runs inherits it.
 echo "🔨 Building $app..."
 mkdir -p "$HOME/Applications"
 rm -rf "$app"
@@ -18,7 +18,7 @@ osacompile -o "$app" <<'APPLESCRIPT'
 try
   -- The script reports failures itself; swallowing the error here keeps the
   -- applet from raising a modal dialog on every failed background run.
-  do shell script "\"$HOME/.local/bin/ambient-obsidian-sync\" >> \"$HOME/Library/Logs/ambient-obsidian-sync.log\" 2>&1"
+  do shell script "\"$HOME/.local/bin/ambient-daily\" >> \"$HOME/Library/Logs/ambient-daily.log\" 2>&1"
 end try
 APPLESCRIPT
 plutil -replace CFBundleIdentifier -string "$label" "$app/Contents/Info.plist"
@@ -32,5 +32,5 @@ echo "🔄 Reloading $label LaunchAgent..."
 launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$plist"
 echo "✅ $label loaded"
-echo "🔐 On first run, allow AmbientObsidianSync to access Documents and iCloud Drive"
+echo "🔐 On first run, allow AmbientDaily to access Documents and iCloud Drive"
 {{- end }}

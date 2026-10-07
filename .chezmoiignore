@@ -55,12 +55,19 @@ Brewfile
 # Lefthook config governs this repo's own hooks; not a dotfile to deploy
 lefthook.yml
 .markdownlint-cli2.jsonc
+ruff.toml
+_typos.toml
 
 # Tests for scripts in this repo; run from the source checkout, never deployed
 tests/
 
+# Bytecode left behind when the tests import ambient-daily; deploying it would
+# drop a stale cache next to the script in ~/.local/bin
+**/__pycache__
+
 # Ambient Context and its LaunchAgent exist only on macOS
 {{ if ne .chezmoi.os "darwin" }}
 Library/
-.local/bin/ambient-obsidian-sync
+.local/bin/ambient-daily
+.config/ambient-daily/
 {{ end }}

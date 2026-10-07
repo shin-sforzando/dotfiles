@@ -1,0 +1,9 @@
+# Lints the Python tooling in this repo; never deployed (see .chezmoiignore).
+target-version = "py39"
+line-length = 120
+extend-include = ["dot_local/bin/executable_ambient-daily"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# The formatter owns line length; long Japanese literals in tests cannot be wrapped.
+ignore = ["E501"]

@@ -1,0 +1,15 @@
+# typos config for this chezmoi source repo; run on staged files by lefthook.
+# Kept out of chezmoi deployment via .chezmoiignore (would otherwise map to ~/_typos.toml).
+
+[default]
+# Without a locale typos accepts both en-GB and en-US; pin en-US so British
+# spellings (colour, behaviour, summarise) that AI agents mix in are flagged.
+locale = "en-us"
+
+[default.extend-words]
+# "BRE" = POSIX basic regular expressions (ugrep aliases in dot_zshrc)
+bre = "bre"
+# "fpr" = git alias for "fetch pull request" in dot_gitconfig.tmpl
+fpr = "fpr"
+# "s[earch] & d[isplace]" mnemonic for sd in Brewfile
+earch = "earch"

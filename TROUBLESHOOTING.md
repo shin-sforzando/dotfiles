@@ -44,9 +44,10 @@
   - [通知が表示されない（Linux）](#通知が表示されないlinux)
   - [statuslineが正しく表示されない](#statuslineが正しく表示されない)
 - [Ambient Context / Obsidian連携](#ambient-context--obsidian連携)
-  - [Daily Noteに要約が書き込まれない](#daily-noteに要約が書き込まれない)
+  - [Daily Noteに書き込まれない](#daily-noteに書き込まれない)
+  - [KBが欠けてノートが作られない](#kbが欠けてノートが作られない)
   - [「unbalanced ambient-context markers」で失敗する](#unbalanced-ambient-context-markersで失敗する)
-  - [タグが付かない・Markdownが崩れる](#タグが付かないmarkdownが崩れる)
+  - [Markdownが崩れる・回帰テスト](#markdownが崩れる回帰テスト)
 - [ツール別の問題](#ツール別の問題)
   - [Homebrew / Linuxbrewの問題](#homebrew--linuxbrewの問題)
   - [topgradeの更新が失敗する](#topgradeの更新が失敗する)
@@ -782,96 +783,126 @@ mise exec node@lts -- npm install --global --prefix "${HOME}/.local/share/cz-emo
 
 ## Ambient Context / Obsidian連携
 
-Ambient Contextには要約後のフックが無いため、LaunchAgent（`jp.co.sforzando.ambient-obsidian-sync`）が
-`~/Documents/Ambient Context/Summaries/` を `WatchPaths` で監視し、変化のたびに
-`~/Applications/AmbientObsidianSync.app` 経由で `~/.local/bin/ambient-obsidian-sync` を実行する。
-スクリプトは最終更新から7日以内の要約だけを、Daily Noteの `<!-- ambient-context:start -->` 〜 `end` の範囲に書き込む。
+`ambient-daily`（`~/.local/bin/ambient-daily`）が毎朝 06:00 に、LaunchAgent（`jp.co.sforzando.ambient-daily`）から専用アプレット `~/Applications/AmbientDaily.app` 経由で起動する。
+今日より前の直近 7 日のうち記録がある日について、次の順に処理する。
 
-### Daily Noteに要約が書き込まれない
+1. Ambient Context の `control.sock` に `ingest_day` を送って KB 作成を依頼し、`KB/<日付>/manifest.md` で成否を判断する（KB が記録より新しければ依頼しない。`rejected` が残っていれば作り直しを強制する）。
+2. タイムライン（記録の見出し）・KB・保管庫のタグ一覧とノート名一覧を `claude -p --safe-mode --json-schema …` に渡し、決まった形の JSON を受け取る。
+3. JSON をスクリプトが Markdown に組み立て、Daily Note の `<!-- ambient-context:start -->` 〜 `end` の範囲だけを置き換える。
 
-**症状**: Ambient Contextの要約（`Summaries/YYYY-MM-DD.md`）はあるのに、Obsidianの `Daily/YYYY-MM-DD.md` に反映されない
+設計の理由:
+
+- Ambient Context への依存は `read_timeline()` と `ensure_kb()` の 2 関数に閉じ込めている。記録ツールを替えるときはこの 2 つを差し替える。
+- 書式は AI ではなくスクリプトが決める。時刻は記録の境界に寄せ、太字・`#語`・裸の URL やメールアドレスは整形で取り除く。
+- Obsidian Linter に書き換えられない形で出す（`created`・`modified` を Linter と同じ形式で書き、H1 は日付、見出しは日本語か Title Case）。
+- 範囲の 2 行目 `<!-- ambient-daily: in=<ハッシュ> tags=… -->` に入力のハッシュとこのスクリプトが付けたタグを記録し、入力が同じなら AI を呼ばない。作り直すときは、このスクリプトが付けたタグだけを外す。
+
+### Daily Noteに書き込まれない
+
+**症状**: 朝になっても `Daily/YYYY-MM-DD.md` の「Ambient Context」節ができない、または更新されない
 
 **原因**:
 
-- `AmbientObsidianSync.app` に「書類」と「iCloud Drive」へのアクセスが許可されていない。
-  `run_onchange` がアプリを再生成すると署名が変わり、許可が外れることがある
-- 要約が7日より古い（意図的に削除したノートを復活させないための制限）
-- そもそもAmbient Contextが要約を作っていない
+- `AmbientDaily.app` に「書類」と「iCloud Drive」へのアクセスが許可されていない。
+  `run_onchange` がアプレットを作り直すと署名が変わり、許可が外れることがある
+- その日の KB が使えない（下の「KB が欠けてノートが作られない」）
+- `claude` のログイン切れや利用上限
 
 **診断:**
 
 ```bash
-# 直近の実行結果（"Operation not permitted" や "privacy protection?" ならアクセス許可の問題）
-# 正常に走った実行は毎回 "checked N summaries, updated M, failed K" を1行残す。
+# 正常に走った実行は毎回 "checked N days, generated M, skipped K, failed F" を 1 行残す。
 # この行が増えていなければスクリプト自体が起動していない（許可ダイアログ待ちで止まっている等）
-tail -n 20 ~/Library/Logs/ambient-obsidian-sync.log
+tail -n 20 ~/Library/Logs/ambient-daily.log
 
 # 許可ダイアログ待ちで止まったアプレットが残っていないか
-pgrep -fl AmbientObsidianSync.app
+pgrep -fl AmbientDaily.app
 
-# LaunchAgentが読み込まれているか、最後の終了コード
-launchctl print "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync" | grep -E 'state|last exit'
-
-# Ambient Context側の処理記録（summarise_day が accepted か）
-grep -nE '^## [0-9:]+ · summarise_day|^- disposition' ~/Documents/Ambient\ Context/Ledger/*.md | tail
+# LaunchAgent が読み込まれているか
+launchctl print "gui/$(id -u)/jp.co.sforzando.ambient-daily" | grep -E 'state|last exit'
 ```
 
 **解決方法:**
 
 ```bash
-# 手動で同期を実行（許可ダイアログが出たら「許可」）
-launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
+# 手動で実行（許可ダイアログが出たら「許可」）
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-daily"
+
+# 特定の日だけ、入力が同じでも作り直す（ターミナルから。書き込まずに確認するなら --dry-run）
+~/.local/bin/ambient-daily --date 2026-10-05 --force
 
 # ダイアログが出ないまま拒否される場合は、許可をリセットしてから再実行
-tccutil reset All jp.co.sforzando.ambient-obsidian-sync
-launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
+tccutil reset All jp.co.sforzando.ambient-daily
+launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-daily"
 ```
 
 > [!NOTE]
-> `/bin/bash` 自体にフルディスクアクセスを与えれば動くが、launchdから動くすべてのbashスクリプトに
+> `/usr/bin/python3` 自体にフルディスクアクセスを与えれば動くが、launchd から動くすべての Python スクリプトに
 > ディスク全体の権限が及ぶため使わない。専用アプレットを挟んでいるのはこのため。
 
-### 「unbalanced ambient-context markers」で失敗する
+### KBが欠けてノートが作られない
 
-**症状**: 失敗通知が出て、ログに `unbalanced ambient-context markers, left untouched` と記録される
+**症状**: ログに `KB is not usable; the note is left alone until it is` と出て、その日のノートが作られない
 
-**原因**: Daily Note内の `<!-- ambient-context:start -->` / `<!-- ambient-context:end -->` の片方を消した、
-または重複させた。スクリプトは管理範囲を特定できないノートを書き換えない
+**原因**:
 
-**解決方法:**
-
-マーカーを対で戻すか、マーカー2行とその間を丸ごと削除してから同期を再実行する（削除した場合は末尾に追記し直される）。
-
-```bash
-launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-obsidian-sync"
-```
-
-### タグが付かない・Markdownが崩れる
-
-**症状**: Daily Noteに話題タグが付かない、Markdownlintが通らない、`#数字` がタグとして扱われる
-
-**原因**: Ambient Contextに改修版の `day-context` プロンプトが反映されていない、またはスクリプトの整形処理の退行
+- Ambient Context が起動していない（`control.sock` に繋がらない）
+- KB 作成の取り込みが不合格になった。
+  アプリは時刻を `\b\d\d:\d\d-\d\d:\d\d\b` で探し、Rust の正規表現では仮名・漢字も単語文字なので、`削除し13:21-13:22に` のように日本語にくっついた時刻は見つからず、出力全体が不合格になる
 
 **診断:**
 
 ```bash
-# 改修版プロンプトが反映されていれば、このディレクトリに day-context.md がある
-ls ~/Library/Application\ Support/com.0x0000007a.ambientcontext/prompts/
+grep -n 'rejected' ~/Documents/Ambient\ Context/Ledger/*.md
+ls ~/Library/Application\ Support/com.0x0000007a.ambientcontext/rejected/
 
-# 整形処理の回帰テスト（launchdと同じ /bin/bash 3.2 と BSD awk で動かす）
+# 改修版プロンプトが反映されていれば、何も出力されない（ingest-websites ほかは標準のまま）
+diff -r ~/Library/Application\ Support/com.0x0000007a.ambientcontext/prompts/ \
+  ~/.local/share/chezmoi/assets/ambient-context/ -x .markdownlint-cli2.jsonc
+```
+
+**解決方法:**
+
+- Ambient Context を起動しておく。
+- Agent タブで `ingest-apps` と `ingest-messages` を `assets/ambient-context/` の同名ファイルに置き換える。
+  次の実行で、`rejected` が残っている日は作り直しが強制される。
+
+### 「unbalanced ambient-context markers」で失敗する
+
+**症状**: 失敗通知が出て、ログに `unbalanced ambient-context markers` または `unreadable frontmatter` と記録される
+
+**原因**: Daily Note 内の `<!-- ambient-context:start -->` / `<!-- ambient-context:end -->` の片方を消した・重複させた、またはフロントマターの閉じ `---` の後ろに空白や BOM がある。
+スクリプトは管理範囲やフロントマターを特定できないノートを書き換えない
+
+**解決方法:**
+
+マーカーを対で戻すか、マーカー 2 行とその間を丸ごと削除する（削除した場合は末尾に追記し直される）。
+フロントマターは閉じの `---` を単独の行に直す。
+
+```bash
+~/.local/bin/ambient-daily --date 2026-10-05 --force
+```
+
+### Markdownが崩れる・回帰テスト
+
+**症状**: Daily Note が Markdownlint を通らない、見出しやリストが崩れる
+
+**診断:**
+
+```bash
+# 整形処理の回帰テスト（launchd と同じ /usr/bin/python3 3.9 で動かす）
 cd ~/.local/share/chezmoi
-/bin/bash tests/ambient-obsidian-sync.sh
+/usr/bin/python3 -m unittest discover -s tests -p test_ambient_daily.py
 
-# Daily Note自体のlint（Vault直下の .markdownlint-cli2.jsonc が MD013 を無効化している）
+# Daily Note 自体の lint（Vault 直下の .markdownlint-cli2.jsonc が MD013 を無効化している）
 cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents
 markdownlint-cli2 "Daily/*.md"
 ```
 
 **解決方法:**
 
-- プロンプト未反映なら、Ambient ContextのAgentタブで `day-context` を `assets/ambient-context/day-context.md` の内容に置き換える
-- テストが落ちるならスクリプトを修正する。BSD awkは文字列比較にロケールの照合順序を使うため、
-  スクリプトは `LC_ALL=C` を前提にしている（外すと「。」と「」」が等しいと判定される）
+崩れたノートの本文を再現するテストを `tests/test_ambient_daily.py` に足してから、`clean_text()` か `render_section()` を直す。
+`/usr/bin/python3` は 3.9 なので、3.10 以降の構文は使えない。
 
 ## ツール別の問題
 

@@ -29,7 +29,7 @@ register() {
 
 # drawio: search_shapes resolves the official draw.io stencil styles (GCP, Cisco,
 # Kubernetes, AWS, …) that the drawio plugin skill is written to call out to. Without
-# it the skill falls back to labelled rectangles. Binary comes from mise (@drawio/mcp).
+# it the skill falls back to labeled rectangles. Binary comes from mise (@drawio/mcp).
 register drawio drawio-mcp
 
 echo "✅ Claude Code MCP servers registered."

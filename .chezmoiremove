@@ -7,3 +7,7 @@
 # Renamed to jp.co.sforzando.*: com.sforzando is someone else's domain. launchd
 # would keep loading the stale plist at every login if it were left behind.
 Library/LaunchAgents/com.sforzando.ambient-obsidian-sync.plist
+
+# Replaced by ambient-daily, which writes the daily note from the KB itself.
+Library/LaunchAgents/jp.co.sforzando.ambient-obsidian-sync.plist
+.local/bin/ambient-obsidian-sync

@@ -53,3 +53,13 @@ pre-commit:
         for file in {staged_files}; do
           jq empty "$file" || { echo "Invalid JSON: $file"; exit 1; }
         done
+
+    # Lint and format-check Python, including the extensionless ambient-daily script
+    ruff:
+      glob: "{*.py,dot_local/bin/executable_ambient-daily}"
+      run: ruff check {staged_files} && ruff format --check {staged_files}
+
+    # Spell-check every staged file against _typos.toml (en-US locale).
+    # --force-exclude keeps the config's excludes in effect for explicitly passed paths.
+    typos:
+      run: typos --force-exclude {staged_files}

@@ -1,7 +1,8 @@
 {
   "config": {
-    // Files here are prompt text pasted into Ambient Context, not documents; adding an H1
-    // would change what the model reads
+    // Files here are prompt text pasted into Ambient Context, not documents. Adding an H1
+    // or a fence language would change what the model reads and drift from upstream
+    "MD040": false,
     "MD041": false
   }
 }

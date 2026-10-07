@@ -120,3 +120,7 @@ Temporary Items
 *.xml
 
 # End of https://www.toptal.com/developers/gitignore/api/osx,windows,linux,visualstudiocode,data,direnv,dotenv
+
+### Python ###
+# Bytecode written when the tests import ambient-daily
+__pycache__/
