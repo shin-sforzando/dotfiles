@@ -12,3 +12,28 @@ fi
 if [[ -f "$HOME/.aftman/env" ]]; then
   . "$HOME/.aftman/env"
 fi
+
+#
+# Human or agent
+#
+
+# Most shells here are started by coding agents, not by a person, so the
+# default is the agent and human conveniences are opt-in (see .zshrc). TTY on
+# both ends is the most direct signal that someone is at the keyboard; $TERM is
+# useless because agents inherit it from the terminal that launched them.
+is_human() {
+  [[ -t 0 && -t 1 ]] || return 1
+  [[ -z $CLAUDECODE$CODEX_SANDBOX$GEMINI_CLI$CURSOR_AGENT$AI_AGENT ]]
+}
+
+# Must stay last: the human's terminal exports EDITOR=code, GIT_EDITOR=nvim and
+# PAGER=ov, and agents inherit them, so they have to be overridden here, on
+# every `zsh -c`, rather than merely left unset in .zshrc. Nobody can answer an
+# editor, a pager or a credential prompt, so make each one return at once.
+# GIT_SEQUENCE_EDITOR is separate because gitconfig's sequence.editor outranks
+# GIT_EDITOR for rebase todo lists.
+if ! is_human; then
+  export EDITOR=true VISUAL=true GIT_EDITOR=true GIT_SEQUENCE_EDITOR=true
+  export PAGER=cat GIT_PAGER=cat MANPAGER=cat
+  export GIT_TERMINAL_PROMPT=0
+fi

@@ -21,6 +21,13 @@ brew "bottom"
 # Surfaces wasted tokens and recurring friction in Claude Code usage; https://github.com/lambdalisue/cclens
 brew "lambdalisue/cclens/cclens"
 
+# GNU File, Shell, and Text utilities, installed only for `timeout`: agents
+# kept writing `timeout N cmd` and failing on macOS, which lacks one. Homebrew
+# links commands macOS lacks (timeout) unprefixed and g-prefixes the rest, so
+# BSD ls/sed/stat stay in front. Never add gnubin to PATH: agents write BSD
+# syntax on macOS
+brew "coreutils"
+
 # Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
 
@@ -131,10 +138,6 @@ brew "less"
 
 # The Log File Navigator
 brew "lnav"
-
-# markdownlint-cli2 is deliberately absent: the formula depends on Homebrew's
-# node, which then shadowed mise's pinned node in every non-interactive shell.
-# It lives in mise's config.toml as an npm-backend tool instead.
 
 # Dev tools version manager
 brew "mise"
