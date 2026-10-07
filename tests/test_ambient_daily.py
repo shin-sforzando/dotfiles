@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 _loader = SourceFileLoader("ambient_daily", str(ROOT / "dot_local/bin/executable_ambient-daily"))
 _spec = importlib.util.spec_from_loader("ambient_daily", _loader)
+assert _spec is not None
 ad = importlib.util.module_from_spec(_spec)
 # dataclasses resolve string annotations through sys.modules, so the module
 # must be registered before it runs.
@@ -54,7 +55,8 @@ url: https://meet.google.com/abc
 """
 
 
-def make_config(root: Path) -> ad.Config:
+# No return annotation: the script is loaded at runtime, so its Config is not a type mypy can see
+def make_config(root: Path):
     return ad.Config(
         ac_root=root / "ac",
         vault=root / "vault",
@@ -180,13 +182,22 @@ class FakeAC:
                 fake.requests.append(request)
                 self.wfile.write((json.dumps(reply(request)) + "\n").encode("utf-8"))
 
-        self.requests = []
+        self.requests: list[dict] = []
         self.server = socketserver.UnixStreamServer(str(path), Handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
     def close(self):
         self.server.shutdown()
         self.server.server_close()
+
+
+def serve_fake_ac(test: unittest.TestCase, path: Path, reply) -> FakeAC:
+    """Starts a FakeAC and registers its shutdown with the test."""
+    fake = FakeAC(path, reply)
+    # Cleanups run last-in first-out, so the server stops before the temp dir
+    # holding its socket (registered in setUp) is removed.
+    test.addCleanup(fake.close)
+    return fake
 
 
 def ac_reply(states, on_done=None):
@@ -217,41 +228,36 @@ class EnsureKbTest(unittest.TestCase):
         apps = self.cfg.ac_root / "Days" / "2026-10-05" / "apps.md"
         apps.parent.mkdir(parents=True)
         apps.write_text(APPS_MD, encoding="utf-8")
-        self.fake = None
+        self.addCleanup(self.tmp.cleanup)
 
-    def tearDown(self):
-        if self.fake:
-            self.fake.close()
-        self.tmp.cleanup()
-
-    def serve(self, reply):
-        self.fake = FakeAC(self.cfg.socket, reply)
+    def serve(self, reply) -> FakeAC:
+        return serve_fake_ac(self, self.cfg.socket, reply)
 
     def test_requests_ingest_and_waits_until_done(self):
-        self.serve(ac_reply(["queued", "running", "done"], on_done=lambda: write_kb(self.kb)))
+        fake = self.serve(ac_reply(["queued", "running", "done"], on_done=lambda: write_kb(self.kb)))
         self.assertTrue(ad.ensure_kb(self.cfg, self.date, sleep=lambda _: None))
-        ops = [request["op"] for request in self.fake.requests]
+        ops = [request["op"] for request in fake.requests]
         self.assertEqual(ops, ["ingest_day", "job_status", "job_status", "job_status"])
-        self.assertEqual(self.fake.requests[0]["date"], "2026-10-05")
+        self.assertEqual(fake.requests[0]["date"], "2026-10-05")
 
     def test_failed_object_status_ends_the_wait(self):
-        self.serve(ac_reply([{"failed": {"stderr": "boom"}}]))
+        fake = self.serve(ac_reply([{"failed": {"stderr": "boom"}}]))
         self.assertFalse(ad.ensure_kb(self.cfg, self.date, sleep=lambda _: None))
-        self.assertEqual(len(self.fake.requests), 2)
+        self.assertEqual(len(fake.requests), 2)
 
     def test_not_found_after_restart_ends_the_wait_and_trusts_the_manifest(self):
         write_kb(self.kb)
         # The manifest predates apps.md here, so a request is still made.
         os.utime(self.kb / "manifest.md", (0, 0))
-        self.serve(ac_reply(["not_found"]))
+        fake = self.serve(ac_reply(["not_found"]))
         self.assertTrue(ad.ensure_kb(self.cfg, self.date, sleep=lambda _: None))
-        self.assertEqual([request["op"] for request in self.fake.requests], ["ingest_day", "job_status"])
+        self.assertEqual([request["op"] for request in fake.requests], ["ingest_day", "job_status"])
 
     def test_fresh_kb_needs_no_request(self):
         write_kb(self.kb)
-        self.serve(ac_reply([]))
+        fake = self.serve(ac_reply([]))
         self.assertTrue(ad.ensure_kb(self.cfg, self.date))
-        self.assertEqual(self.fake.requests, [])
+        self.assertEqual(fake.requests, [])
 
     def test_missing_socket_falls_back_to_existing_kb(self):
         write_kb(self.kb, apps="accepted")
@@ -288,11 +294,11 @@ class VaultTest(unittest.TestCase):
 
     def test_vocabulary_counts_frontmatter_and_inline_tags(self):
         self.note("Magic/a.md", "---\ntags:\n  - Magic\n---\n\nbody #python\n")
-        self.note("Magic/b.md", "---\ntags: [magic]\n---\n\n```\n#notatag\n```\n#ff6b6b\n")
+        self.note("Magic/b.md", "---\ntags: [magic]\n---\n\n```\n#fenced\n```\n#ff6b6b\n")
         tags, titles = ad.vault_vocabulary(self.vault)
         self.assertEqual(tags["magic"], 2)
         self.assertEqual(tags["python"], 1)
-        self.assertNotIn("notatag", tags)
+        self.assertNotIn("fenced", tags)
         self.assertNotIn("ff6b6b", tags)
         self.assertEqual(titles, ["a", "b"])
 
@@ -365,7 +371,7 @@ class GenerateTest(unittest.TestCase):
         )
         self.assertNotIn("{{", prompt)
         self.assertIn("2026-10-05|12:52-12:53 · Claude", prompt)
-        self.assertIn("|KB|magic (14)\naotake (8)|Flipples", prompt)
+        self.assertIn("|KB|" + "\n".join(["magic (14)", "aotake (8)"]) + "|Flipples", prompt)
 
     def test_input_hash_changes_with_kb_only_when_inputs_change(self):
         first = ad.input_hash("t", self.blocks, "kb")
@@ -664,13 +670,10 @@ class ReviewFixesTest(unittest.TestCase):
         self.cfg.daily_dir.mkdir(parents=True)
         self.stderr = contextlib.redirect_stderr(io.StringIO())
         self.log = self.stderr.__enter__()
-        self.fake = None
+        self.addCleanup(self.tmp.cleanup)
 
     def tearDown(self):
         self.stderr.__exit__(None, None, None)
-        if self.fake:
-            self.fake.close()
-        self.tmp.cleanup()
 
     def test_unexpected_error_in_one_day_is_counted_not_fatal(self):
         apps = self.cfg.ac_root / "Days" / "2026-10-05" / "apps.md"
@@ -698,9 +701,9 @@ class ReviewFixesTest(unittest.TestCase):
         apps.parent.mkdir(parents=True)
         apps.write_text(APPS_MD, encoding="utf-8")
         write_kb(self.cfg.ac_root / "KB" / "2026-10-05", apps='rejected: issues.md: "x"')
-        self.fake = FakeAC(self.cfg.socket, ac_reply([]))
+        fake = serve_fake_ac(self, self.cfg.socket, ac_reply([]))
         ad.ensure_kb(self.cfg, dt.date(2026, 10, 5), sleep=lambda _: None)
-        self.assertTrue(self.fake.requests[0]["force"])
+        self.assertTrue(fake.requests[0]["force"])
 
     def test_dry_run_does_not_claim_it_wrote(self):
         apps = self.cfg.ac_root / "Days" / "2026-10-05" / "apps.md"
@@ -729,9 +732,9 @@ class ReviewFixesTest(unittest.TestCase):
         apps = self.cfg.ac_root / "Days" / "2026-10-05" / "apps.md"
         apps.parent.mkdir(parents=True)
         apps.write_text(APPS_MD, encoding="utf-8")
-        self.fake = FakeAC(self.cfg.socket, ac_reply([]))
+        fake = serve_fake_ac(self, self.cfg.socket, ac_reply([]))
         ad.ensure_kb(self.cfg, dt.date(2026, 10, 5), sleep=lambda _: None)
-        self.assertFalse(self.fake.requests[0]["force"])
+        self.assertFalse(fake.requests[0]["force"])
 
 
 class PromptFileTest(unittest.TestCase):

@@ -4,6 +4,9 @@
 [default]
 # Without a locale typos accepts both en-GB and en-US; pin en-US so British
 # spellings (colour, behaviour, summarise) that AI agents mix in are flagged.
+# The examples above are the point of the comment, so cspell must not flag them;
+# adding them to cSpell.words instead would whitelist them everywhere.
+# cspell:ignore colour behaviour summarise
 locale = "en-us"
 
 [default.extend-words]
