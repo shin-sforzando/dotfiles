@@ -11,3 +11,9 @@ Library/LaunchAgents/com.sforzando.ambient-obsidian-sync.plist
 # Replaced by ambient-daily, which writes the daily note from the KB itself.
 Library/LaunchAgents/jp.co.sforzando.ambient-obsidian-sync.plist
 .local/bin/ambient-obsidian-sync
+
+# SidePulse is retired. Only chezmoi-managed targets are listed here; the CLI, its
+# venv and LaunchAgents are torn down by run_once_before_uninstall-sidepulse, which
+# needs the CLI to still exist when it runs.
+.config/sidepulse
+.claude/scripts/sidepulse-update.sh

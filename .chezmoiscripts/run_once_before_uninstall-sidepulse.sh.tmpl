@@ -1,0 +1,44 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+# SidePulse is retired: the Pro card never enumerates on the Mac Studio, and agent
+# status is moving to a LAN-side display instead. This runs as a *before* script so
+# that whatever the official uninstaller does to ~/.claude/settings.json is
+# overwritten afterwards by the source copy, which no longer carries SidePulse hooks.
+
+sidepulse="$HOME/.local/bin/sidepulse"
+if [ ! -x "$sidepulse" ]; then
+  exit 0
+fi
+
+echo "🧹 Uninstalling SidePulse..."
+
+# The CLI is the only thing that knows every file it planted (hooks in Codex, Cursor,
+# Grok and Junie, the eject guard, the sleep helper), so it runs before its own
+# directory goes away. Each step is best-effort: a partially removed install must not
+# abort the rest of the apply.
+"$sidepulse" status-bar stop || true
+"$sidepulse" service stop || true
+"$sidepulse" sdejectguard uninstall || true
+"$sidepulse" agent-monitor uninstall all || true
+"$sidepulse" status-bar uninstall-sleep-helper || true
+
+# The sleep helper's sudoers entry grants passwordless pmset; leaving it behind would
+# keep that privilege alive with nothing using it.
+sudoers="/etc/sudoers.d/sidepulse-disablesleep"
+if [ -e "$sudoers" ]; then
+  echo "🔐 Removing $sudoers (requires sudo)..."
+  sudo rm -f "$sudoers"
+fi
+
+# launchd keeps a loaded job running even after its plist is deleted.
+for label in io.sidepulse.service io.sidepulse.sdejectguard io.sidepulse.agentstatus; do
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  rm -f "$HOME/Library/LaunchAgents/$label.plist"
+done
+
+rm -rf "$HOME/.local/share/sidepulse" "$HOME/.local/state/sidepulse" "$sidepulse"
+echo "✅ SidePulse removed"
+{{ end -}}
