@@ -1,4 +1,7 @@
 {{- if eq .chezmoi.os "darwin" -}}
+{{- /* The installed branch must render byte-for-byte as before: any change to the
+output re-runs this script, and a rebuilt applet loses its privacy grants. */ -}}
+{{- if includeTemplate "ambient-context-installed" . -}}
 #!/bin/bash
 # plist hash: {{ include "private_Library/LaunchAgents/jp.co.sforzando.ambient-daily.plist.tmpl" | sha256sum }}
 
@@ -33,4 +36,24 @@ launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$plist"
 echo "✅ $label loaded"
 echo "🔐 On first run, allow AmbientDaily to access Documents and iCloud Drive"
+{{- else -}}
+#!/bin/bash
+
+set -eufo pipefail
+
+# Ambient Context is not installed here, so there is no KB to read and a copy of
+# ambient-daily deployed before it was gated would fail and notify every morning.
+# .chezmoiignore stops further deploys, but chezmoi never removes an ignored target
+# (not even one listed in .chezmoiremove), launchd keeps a loaded job until it is
+# booted out, and the applet is built rather than deployed: all of it goes here.
+label="jp.co.sforzando.ambient-daily"
+if launchctl print "gui/$(id -u)/$label" &>/dev/null; then
+  echo "🧹 Unloading $label (Ambient Context is not installed)..."
+  launchctl bootout "gui/$(id -u)/$label" || true
+fi
+rm -rf "$HOME/Applications/AmbientDaily.app" \
+  "$HOME/Library/LaunchAgents/$label.plist" \
+  "$HOME/.local/bin/ambient-daily" \
+  "$HOME/.config/ambient-daily"
+{{- end }}
 {{- end }}

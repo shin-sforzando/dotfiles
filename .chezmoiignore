@@ -65,9 +65,15 @@ tests/
 # drop a stale cache next to the script in ~/.local/bin
 **/__pycache__
 
-# Ambient Context and its LaunchAgent exist only on macOS
+# ~/Library only exists on macOS
 {{ if ne .chezmoi.os "darwin" }}
 Library/
+{{ end }}
+
+# ambient-daily only makes sense where Ambient Context itself is installed;
+# .chezmoiremove retires these targets on machines that do not have it
+{{ if not (includeTemplate "ambient-context-installed" .) }}
+Library/LaunchAgents/jp.co.sforzando.ambient-daily.plist
 .local/bin/ambient-daily
 .config/ambient-daily/
 {{ end }}

@@ -1,0 +1,7 @@
+{{- /*
+Ambient Context is installed by hand from a DMG and only on some Macs (the Mac
+Studio, not the MacBook Air). Keying on the app itself rather than a hostname list
+means a renamed or new machine follows whatever is actually installed. Renders
+"true" or nothing, so callers can use it directly in an `if`.
+*/ -}}
+{{- if stat "/Applications/Ambient Context.app" }}true{{ end -}}

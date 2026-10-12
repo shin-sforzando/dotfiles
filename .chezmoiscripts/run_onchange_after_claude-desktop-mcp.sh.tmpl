@@ -33,15 +33,21 @@ trap 'rm -f "$tmp"' EXIT
 
 # ambient-context: the app binary doubles as a stdio MCP server (docs/mcp.md upstream).
 # Reads work with the app closed; writes go through the running app and are ledgered.
+# On a Mac without the app the entry would only fail at every Desktop launch, so it
+# is removed there instead.
 #
 # obsidian-mcp-tools: the plugin's installer wrote the command without its leading
 # slash, so Desktop resolved it as a relative path and the server never started.
 # The repair only prefixes a missing slash and leaves the entry (and its key) alone.
 jq --indent 2 '
+{{- if includeTemplate "ambient-context-installed" . }}
   .mcpServers["ambient-context"] = {
     "command": "/Applications/Ambient Context.app/Contents/MacOS/ambient-context",
     "args": ["mcp"]
   }
+{{- else }}
+  del(.mcpServers["ambient-context"])
+{{- end }}
   | if (.mcpServers["obsidian-mcp-tools"].command // "" | startswith("Users/"))
     then .mcpServers["obsidian-mcp-tools"].command |= "/" + .
     else . end

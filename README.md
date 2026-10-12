@@ -116,12 +116,16 @@ sudo tailscale up --ssh
 cd ~/.local/share/chezmoi
 lefthook install
 
-# 6. (macOS) Ambient Context -> Obsidian daily notes (ambient-daily)
-# chezmoi deploys ambient-daily and its LaunchAgent; everything below lives in
-# app settings or macOS privacy grants, which chezmoi cannot write.
+# 6. (macOS, optional) Ambient Context -> Obsidian daily notes (ambient-daily)
+# Only for Macs that run Ambient Context (the Mac Studio, not the MacBook Air).
+# chezmoi deploys ambient-daily, its LaunchAgent and the Claude Desktop MCP entry
+# only where /Applications/Ambient Context.app exists, and removes them where it
+# does not; everything below lives in app settings or macOS privacy grants.
 # a. Install Ambient Context from its signed DMG (it has no Homebrew cask):
 #    https://github.com/dragthelake/ambient-context/releases
 #    Grant Accessibility when asked and keep the default folder ~/Documents/Ambient Context.
+#    Then deploy the parts that waited for the app:
+chezmoi apply
 # b. Agent tab: connect Claude Code (model claude-sonnet-5, effort medium) and
 #    leave the daily schedule empty; ambient-daily asks for the KB at 06:00 itself.
 # c. Agent tab prompt editor: replace ingest-apps and ingest-messages with the
@@ -230,8 +234,8 @@ This repository manages configurations for the following applications:
 | **topgrade** | System update manager                   | `~/.config/topgrade.toml`                  |
 | **Atuin**    | Shell history sync (E2E encrypted)      | `~/.config/atuin/`                         |
 | **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
-| **ambient-daily** | Writes Obsidian daily notes from Ambient Context's KB (macOS) | `~/.local/bin/ambient-daily`, `~/.config/ambient-daily/`, `~/Library/LaunchAgents/` |
-| **Claude Desktop MCP** | Merges the `ambient-context` MCP server into Desktop's config (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` (`mcpServers` only) |
+| **ambient-daily** | Writes Obsidian daily notes from Ambient Context's KB (Macs with Ambient Context) | `~/.local/bin/ambient-daily`, `~/.config/ambient-daily/`, `~/Library/LaunchAgents/` |
+| **Claude Desktop MCP** | Merges the `ambient-context` MCP server into Desktop's config (Macs with Ambient Context) | `~/Library/Application Support/Claude/claude_desktop_config.json` (`mcpServers` only) |
 
 > [!NOTE]
 > ambient-daily runs through a generated `~/Applications/AmbientDaily.app` so it can hold
