@@ -7,6 +7,8 @@
 - Do not ignore Linter warnings
 - Delegate read-only, multi-file investigation (codebase search, spec reading, log scans, web research) to the `recon` subagent
   - MANDATORY when it would use 5+ read calls or read 3+ files.
+  - Split topics that do not read each other's results into separate `recon` agents launched in one message - an "and then" without a data dependency is wasted wait
+  - Before synthesizing, confirm every launched agent reported back and check its 未確認・失敗 section; name any gap instead of silently working from partial results
 - Git operation rules - Git operations are basically performed by the user
   - Working directly on the main branch is strictly prohibited
 
