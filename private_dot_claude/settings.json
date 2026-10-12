@@ -213,7 +213,6 @@
   "enabledPlugins": {
     "cclens@cclens": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
-    "claude-code-setup@claude-plugins-official": true,
     "claude-code-wakatime@wakatime": true,
     "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
