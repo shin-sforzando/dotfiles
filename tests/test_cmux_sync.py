@@ -82,7 +82,7 @@ printf '%s\n' "${FAKE_HOSTNAME:-TestMac}"
 
 def workspace(
     index: int,
-    cwd: str,
+    cwd: str | None,
     *,
     ws_id: str | None = None,
     ws_ref: str | None = None,
@@ -97,7 +97,7 @@ def workspace(
 
     Args:
         index: Sidebar position reported by cmux.
-        cwd: Absolute current directory of the workspace.
+        cwd: Absolute current directory, or None when cmux reports none.
         ws_id: Workspace UUID; defaults to "old-<index>".
         ws_ref: Workspace ref that group membership refers to; defaults to "workspace:<index>".
         title: Custom title, or None when the workspace was never renamed.
@@ -392,6 +392,16 @@ class PushTest(CmuxSyncTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("2 windows have workspaces", result.stderr)
 
+    def test_push_keeps_workspace_without_directory(self) -> None:
+        """A workspace with no reported directory is stored with a null cwd."""
+        self.set_cmux_state(list=[workspace(0, None), workspace(1, str(self.home))])
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        first, second = self.snapshot()["workspaces"]
+        self.assertIsNone(first["cwd"])
+        self.assertIsNone(first["repo"])
+        self.assertEqual(second["cwd"], "~")
+
     def test_push_records_groups_and_workspace_attributes(self) -> None:
         """Group membership, colors, icon, pin, description and selection survive."""
         self.set_cmux_state(
@@ -623,6 +633,36 @@ class PullTest(CmuxSyncTestCase):
         log = (self.state_dir / "last-pull.log").read_text()
         self.assertIn("previous workspaces are untouched", log)
         self.assertIn("new-1", log)
+
+    def test_pull_opens_workspace_without_directory_at_home(self) -> None:
+        """A null cwd from the snapshot opens at HOME instead of a relative path."""
+        self.write_snapshot(make_snapshot([{"cwd": None}]))
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.flag(self.creates()[0], "--cwd"), str(self.home))
+
+    def test_pull_logs_workspaces_it_could_not_close(self) -> None:
+        """Close failures reach the log, which outlives the caller's terminal."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        self.set_cmux_state(
+            list=[workspace(i, str(self.home)) for i in range(3)],
+            fail_on=["close-workspace"],
+        )
+        self.run_sync("pull", "--yes")
+        log = (self.state_dir / "last-pull.log").read_text()
+        self.assertIn("could not close workspace old-0", log)
+        self.assertIn("could not close workspace old-2", log)
+
+    def test_pull_keeps_the_previous_backup(self) -> None:
+        """A second pull moves the earlier backup aside instead of overwriting it."""
+        self.state_dir.mkdir(parents=True)
+        earlier = {"version": 1, "marker": "earlier layout"}
+        (self.state_dir / "before-pull.json").write_text(json.dumps(earlier))
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        previous = json.loads((self.state_dir / "before-pull.prev.json").read_text())
+        self.assertEqual(previous, earlier)
 
     def test_pull_saves_current_layout_before_changing_it(self) -> None:
         """The receiving Mac's layout is saved and can be pulled back with --from."""

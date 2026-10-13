@@ -164,8 +164,9 @@ build_snapshot() {
         workspaces: [$local[] | {
           title: (if .has_custom_title then .custom_title else null end),
           color: .custom_color,
-          cwd: (.current_directory | tilde),
-          repo: $repos[.current_directory],
+          # Browser-only workspaces, or shells that have not reported yet, have no directory
+          cwd: (.current_directory | if . == null then null else tilde end),
+          repo: (if .current_directory == null then null else $repos[.current_directory] end),
           group: ($group_of[.ref] // null),
           pinned: (.pinned // false),
           description: .description,
@@ -193,7 +194,9 @@ resolve_dirs() {
   DIRS=()
   PENDING=""
   for ((i = 0; i < count; i++)); do
-    cwd=$(from_tilde "$(jq -r ".workspaces[$i].cwd" <<<"$snap")")
+    cwd=$(jq -r ".workspaces[$i].cwd // empty" <<<"$snap")
+    # A workspace saved without a directory would otherwise resolve to the relative path "."
+    cwd=$(from_tilde "${cwd:-~}")
     repo=$(jq -r ".workspaces[$i].repo // empty" <<<"$snap")
     if [ -d "$cwd" ]; then
       DIRS[i]=$cwd
@@ -274,6 +277,11 @@ apply_pull() {
 
   mkdir -p "$STATE_DIR"
   : >"$LOG_FILE"
+  # Keep one earlier backup: an undo via --from reads before-pull.json, and a failed
+  # undo must not leave the only copy of the original layout overwritten
+  if [ -f "$STATE_DIR/before-pull.json" ]; then
+    mv "$STATE_DIR/before-pull.json" "$STATE_DIR/before-pull.prev.json"
+  fi
   build_snapshot >"$STATE_DIR/before-pull.json"
   log "saved the current layout to $STATE_DIR/before-pull.json (undo with: cmux-sync pull --from that file)"
   old_ids=$(cmux workspace list --json | jq -r "$JQ_DEFS"'ws_items[].id')
@@ -325,7 +333,7 @@ apply_pull() {
       continue
     fi
     # --force: the user already agreed to close every workspace, including ones running a process
-    cmux close-workspace --workspace "$id" --force >/dev/null || warn "could not close workspace $id"
+    cmux close-workspace --workspace "$id" --force >/dev/null || log "could not close workspace $id; close it by hand"
   done <<<"$old_ids"
   selected=$(jq '[.workspaces[].selected] | index(true) // empty' <<<"$snap")
   [ -z "$selected" ] || cmux select-workspace --workspace "${new_ids[selected]}" >/dev/null
