@@ -217,7 +217,12 @@ resolve_dirs() {
 clone_pending() {
   local snap=$1 root=$2 count i repo
   [ -n "$PENDING" ] || return 0
-  printf '%s' "$PENDING" | sort -u | xargs -P "$CLONE_JOBS" -n 1 ghq get >/dev/null 2>&1 || true
+  # A private repo with no stored credential makes git ask for a password on the
+  # terminal, and with output discarded the pull just hangs. Failing fast instead
+  # sends it down the nearest-parent fallback and into the report.
+  printf '%s' "$PENDING" | sort -u |
+    GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" \
+      xargs -P "$CLONE_JOBS" -n 1 ghq get >/dev/null 2>&1 || true
   count=$(jq '.workspaces | length' <<<"$snap")
   for ((i = 0; i < count; i++)); do
     [ -z "${DIRS[i]}" ] || continue

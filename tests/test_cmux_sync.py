@@ -64,6 +64,16 @@ case "$1" in
   get)
     printf '%s\n' "$2" >>"$FAKE_GHQ_CALLS"
     for fail in $FAKE_GHQ_FAIL; do [ "$2" = "$fail" ] && exit 1; done
+    # A private repo without stored credentials makes git wait for a password on the
+    # terminal unless prompting is disabled, which is what hung real pulls
+    for private in $FAKE_GHQ_PRIVATE; do
+      if [ "$2" = "$private" ]; then
+        case "$GIT_TERMINAL_PROMPT:$GIT_SSH_COMMAND" in
+          0:*BatchMode=yes*) exit 128 ;;
+          *) sleep 30; exit 1 ;;
+        esac
+      fi
+    done
     mkdir -p "$FAKE_GHQ_ROOT/$2"
     ;;
 esac
@@ -231,6 +241,8 @@ class CmuxSyncTestCase(unittest.TestCase):
             text=True,
             env={**self.env, **(env or {})},
             check=False,
+            # A hung git prompt must fail the test, not stall the suite
+            timeout=15,
         )
 
     def cmux_calls(self) -> list[list[str]]:
@@ -599,6 +611,15 @@ class PullTest(CmuxSyncTestCase):
             self.assertIn(["workspace-group", "set-icon", "grp-1", "--symbol", "folder.fill"], calls)
             self.assertIn(["workspace-group", "collapse", "grp-1"], calls)
         self.assertNotEqual(keys[0], keys[1])
+
+    def test_pull_does_not_wait_for_git_credentials(self) -> None:
+        """A clone that needs a password fails fast and falls back to the parent."""
+        self.write_snapshot(make_snapshot([{"cwd": "~/Workspace/github.com/o/secret", "repo": "github.com/o/secret"}]))
+        result = self.run_sync("pull", "--yes", env={"FAKE_GHQ_PRIVATE": "github.com/o/secret"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.flag(self.creates()[0], "--cwd"), str(self.ghq_root))
+        log = (self.state_dir / "last-pull.log").read_text()
+        self.assertIn("clone failed: github.com/o/secret", log)
 
     def test_pull_clones_missing_repos_and_falls_back_on_failure(self) -> None:
         """Missing repos are cloned; a failed clone opens at the nearest parent."""
