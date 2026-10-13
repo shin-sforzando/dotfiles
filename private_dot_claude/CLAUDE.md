@@ -12,6 +12,17 @@
 - Git operation rules - Git operations are basically performed by the user
   - Working directly on the main branch is strictly prohibited
 
+## Design Approval
+
+Every approval gate for a written design - a spec, an implementation plan, a design doc, a plan-mode plan - goes through Crit.
+This overrides the `crit` skill's "only when explicitly invoked" description.
+
+- Launch `crit <file>` yourself (`run_in_background: true`, `timeout: 86400000`) as soon as the document is written, instead of asking for approval in chat
+  - Why: the default permission mode is `auto`, so plan mode and its `crit plan-hook` are bypassed; nothing else stops a design from being waved through
+- A chat reply such as "OK" or "looks good" does not approve a written design. Approval is Finish Review with zero unresolved comments
+- Address comments in the file and reply in Crit, then start the next round; never resolve comments on the reviewer's behalf
+- Short in-chat designs with no file (a bounded change of a few sentences) may still be approved in chat
+
 ## Diagrams
 
 Diagrams are authored with the `drawio` plugin skill plus the `drawio` MCP server.
