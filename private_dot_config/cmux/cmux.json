@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+  "schemaVersion": 1,
+  "sleepyMode": {
+    "mascot": "cmux"
+  },
+  "commands": [
+    {
+      "name": "Workspace Sync: Push",
+      "description": "Save this Mac's workspace layout to iCloud Drive",
+      "keywords": ["sync", "push", "cmux-sync"],
+      "command": "cmux-sync push"
+    },
+    {
+      "name": "Workspace Sync: Pull",
+      "description": "Replace this Mac's workspaces with the saved layout",
+      "keywords": ["sync", "pull", "cmux-sync"],
+      "command": "cmux-sync pull --yes",
+      "confirm": true
+    }
+  ]
+}
