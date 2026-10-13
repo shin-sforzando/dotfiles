@@ -194,11 +194,10 @@ vimcmd_visual_symbol = '[❮](bold fg:yellow)'
 
 [cmd_duration]
 show_milliseconds = true
-format = " in $duration "
+format = " in $duration "
 style = "bg:lavender"
 disabled = false
-show_notifications = true
-min_time_to_notify = 30000
+show_notifications = false
 
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
