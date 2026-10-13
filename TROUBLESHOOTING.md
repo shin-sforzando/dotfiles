@@ -52,6 +52,11 @@
   - [キーが OFFLINE のまま](#キーが-offline-のまま)
   - [デーモンの導入スクリプトが失敗する](#デーモンの導入スクリプトが失敗する)
   - [アンインストール](#アンインストール)
+- [cmux Workspace 同期](#cmux-workspace-同期)
+  - [リポジトリが clone されず親ディレクトリで開く](#リポジトリが-clone-されず親ディレクトリで開く)
+  - [pull を取り消したい](#pull-を取り消したい)
+  - [push が「nothing was pushed」で失敗する](#push-がnothing-was-pushedで失敗する)
+  - [パレットのコマンドが Claude Code に入力される](#パレットのコマンドが-claude-code-に入力される)
 - [ツール別の問題](#ツール別の問題)
   - [Homebrew / Linuxbrewの問題](#homebrew--linuxbrewの問題)
   - [topgradeの更新が失敗する](#topgradeの更新が失敗する)
@@ -963,6 +968,64 @@ rm -rf ~/.agentdeck
 
 フックは source の `private_dot_claude/settings.json` から `AGENTDECK_PORT` を含むエントリを消して `chezmoi apply` する。
 プラグインは Ulanzi Studio から削除する。
+
+## cmux Workspace 同期
+
+`cmux-sync` は cmux のサイドバー（順序・タイトル・色・CWD・グループ・ピン・選択位置）を iCloud Drive 経由で Mac 間に運ぶ。使い方は [README](./README.md#sync-cmux-workspaces)。
+
+| 置き場所 | 中身 |
+| --- | --- |
+| `~/Library/Mobile Documents/com~apple~CloudDocs/cmux-sync/snapshot.json` | `push` が書く同期データ。2 台で共有 |
+| `~/.local/state/cmux-sync/before-pull.json` | `pull` 直前の受け側レイアウト。1 つ前は `before-pull.prev.json` |
+| `~/.local/state/cmux-sync/last-pull.log` | 直近の `pull` の結果 |
+| `~/.config/cmux/cmux.json` | Command Palette の `actions`（chezmoi 管理） |
+
+設計の理由:
+
+- `pull` は受け側の Workspace を突き合わせず、全部作り直す。2 台で Workspace の UUID が別々に採番されるため、対応付けをしない方が単純で壊れにくい。
+- 古い Workspace を閉じるのは、作成・グループ化・並べ替えがすべて成功した後だけ。途中で失敗しても元の Workspace は全部残る。実行元の Workspace は最後に閉じる。
+- 動いているプロセスがある Workspace は `close-workspace --force` で閉じる。`--force` 無しだと `confirmation_required` で拒否される。
+- cmux 0.65.1 の `new-workspace` は `--json` を付けても `OK workspace:<n>` しか返さないので、ref を ID として使う。グループのメンバーも ref（`member_workspace_refs`）で表される。
+
+### リポジトリが clone されず親ディレクトリで開く
+
+**症状:** `pull` 後の通知やログに `clone failed: github.com/<owner>/<repo>` が出て、その Workspace が `~/Workspace/github.com/<owner>` などで開く。
+
+**原因:** macOS の git は GitHub の認証情報を osxkeychain から `useHttpPath = true` で、つまりリポジトリ単位で引く。一度も clone したことのないプライベートリポジトリには項目が無い。`cmux-sync` は認証プロンプトで固まらないよう `GIT_TERMINAL_PROMPT=0` で `ghq get` するので、そのまま失敗扱いになる。
+
+**解決方法:**
+
+```bash
+gh repo clone <owner>/<repo> ~/Workspace/github.com/<owner>/<repo>
+```
+
+gh の認証で通る。clone 後にもう一度 `pull` するか、その Workspace の CWD を移動する。
+
+### pull を取り消したい
+
+```bash
+cmux-sync pull --from ~/.local/state/cmux-sync/before-pull.json
+```
+
+取り消しの pull 自体も直前のレイアウトを退避するので、`before-pull.json` は上書きされる。元のレイアウトは `before-pull.prev.json` に 1 世代残る。
+戻るのは並び・タイトル・色・グループ・CWD だけで、閉じたシェルや Claude Code のセッションは戻らない。
+
+### push が「nothing was pushed」で失敗する
+
+`ghq root` か cmux の読み取り（`workspace list` / `workspace-group list` / `tree`）が失敗している。iCloud 上の前回のスナップショットは書き換わっていない。
+
+```bash
+ghq root
+CMUX_QUIET=1 cmux workspace list --json | head
+```
+
+cmux の外（Tailscale SSH など）から実行するとソケットに繋がらないことがあるので、cmux のターミナルで実行する。
+
+### パレットのコマンドが Claude Code に入力される
+
+cmux.json の `commands`（シェル型）は、コマンド文字列をフォーカス中のターミナルに打鍵する。フォーカスが Claude Code だとプロンプトに入力される。
+`cmux-sync` は `actions` の `type: "command"` と `target: "newTabInCurrentPane"` で定義し、新しいタブで実行している。`commands` に戻さない。
+また 0.65.1 では `actions` の `confirm: true` が効かなかったので、確認は `cmux-sync pull` 自身の `y/N` で取る。
 
 ## ツール別の問題
 

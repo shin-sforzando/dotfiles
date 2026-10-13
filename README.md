@@ -26,6 +26,7 @@ My dotfiles managed by [chezmoi](https://www.chezmoi.io/) + [Sheldon](https://sh
   - [Add custom aliases](#add-custom-aliases)
   - [Edit Brewfile](#edit-brewfile)
   - [Pre-commit hooks](#pre-commit-hooks)
+  - [Sync cmux workspaces](#sync-cmux-workspaces)
 - [Key Components](#key-components)
   - [Managed Configurations](#managed-configurations)
   - [Sheldon Plugins](#sheldon-plugins)
@@ -224,6 +225,33 @@ On each commit, the `pre-commit` hook:
 - Formats shell scripts with `shfmt`
 - Lints Markdown (`markdownlint-cli2`) and validates JSON (`jq`)
 
+### Sync cmux workspaces
+
+`cmux-sync` carries the cmux sidebar (workspace order, titles, colors, cwd, groups, pins and
+the selected workspace) between Macs through iCloud Drive. Push on the Mac you leave, pull on
+the Mac you move to. The same two commands are in cmux's Command Palette as
+**Workspace Sync: Push** and **Workspace Sync: Pull**; both run in a new terminal tab.
+
+```bash
+cmux-sync push               # save this Mac's layout to iCloud Drive
+cmux-sync show               # print the saved layout without touching cmux
+cmux-sync pull --dry-run     # preview where each workspace opens and which repos get cloned
+cmux-sync pull               # ask y/N, then rebuild every workspace in this window
+cmux-sync pull --from ~/.local/state/cmux-sync/before-pull.json   # undo the last pull
+```
+
+> [!WARNING]
+> `pull` closes every workspace in the window, including running shells and Claude Code
+> sessions, after the new ones are created. Layout comes back with `--from`; processes do not.
+
+- Repositories missing on the receiving Mac are cloned with `ghq get` into `~/Workspace`.
+  A clone that needs credentials git does not have (a private repo never cloned on that Mac)
+  fails instead of prompting, opens at the nearest existing parent, and is listed in the log.
+- The result of a pull goes to a cmux notification and `~/.local/state/cmux-sync/last-pull.log`,
+  because the tab that ran it closes with its workspace.
+- After editing the script, run `/usr/bin/python3 -m unittest tests/test_cmux_sync.py` from this
+  repo. Problems are covered in [Troubleshooting](./TROUBLESHOOTING.md#cmux-workspace-同期).
+
 ## Key Components
 
 ### Managed Configurations
@@ -247,6 +275,7 @@ This repository manages configurations for the following applications:
 | **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
 | **ambient-daily** | Writes Obsidian daily notes from Ambient Context's KB (Macs with Ambient Context) | `~/.local/bin/ambient-daily`, `~/.config/ambient-daily/`, `~/Library/LaunchAgents/` |
 | **Claude Desktop MCP** | Merges the `ambient-context` MCP server into Desktop's config (Macs with Ambient Context) | `~/Library/Application Support/Claude/claude_desktop_config.json` (`mcpServers` only) |
+| **cmux-sync** | Carries the cmux workspace layout between Macs via iCloud Drive | `~/.local/bin/cmux-sync`, `~/.config/cmux/cmux.json` (Command Palette actions) |
 | **AgentDeck** | Shows Claude Code sessions on the Ulanzi D200X (daemon on Macs with Ulanzi Studio) | `~/.claude/settings.json` (hooks), `~/Library/LaunchAgents/dev.agentdeck.daemon.plist`, `~/.agentdeck/` |
 
 > [!NOTE]
