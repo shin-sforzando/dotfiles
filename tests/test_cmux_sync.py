@@ -317,5 +317,121 @@ class ShowTest(CmuxSyncTestCase):
         self.assertIn("run 'cmux-sync push'", result.stderr)
 
 
+class PushTest(CmuxSyncTestCase):
+    """cmux-sync push."""
+
+    def test_push_keeps_only_custom_titles(self) -> None:
+        """Auto titles are dropped so the receiving Mac regenerates them."""
+        self.set_cmux_state(
+            list=[
+                workspace(0, str(self.home), title="Renamed"),
+                workspace(1, str(self.home)),
+            ]
+        )
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        titles = [w["title"] for w in self.snapshot()["workspaces"]]
+        self.assertEqual(titles, ["Renamed", None])
+
+    def test_push_orders_by_index(self) -> None:
+        """Workspaces are stored in sidebar order even if cmux lists them otherwise."""
+        self.set_cmux_state(
+            list=[
+                workspace(1, str(self.home), title="second"),
+                workspace(0, str(self.home), title="first"),
+            ]
+        )
+        self.run_sync("push")
+        titles = [w["title"] for w in self.snapshot()["workspaces"]]
+        self.assertEqual(titles, ["first", "second"])
+
+    def test_push_stores_tilde_cwd_and_ghq_repo(self) -> None:
+        """Paths are stored relative to HOME and ghq checkouts get a repo slug."""
+        repo_sub = self.ghq_root / "github.com" / "o" / "r" / "sub dir"
+        repo_sub.mkdir(parents=True)
+        spaced = self.home / "Library" / "Mobile Documents"
+        spaced.mkdir(parents=True)
+        self.set_cmux_state(list=[workspace(0, str(repo_sub)), workspace(1, str(spaced))])
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        first, second = self.snapshot()["workspaces"]
+        self.assertEqual(first["cwd"], "~/Workspace/github.com/o/r/sub dir")
+        self.assertEqual(first["repo"], "github.com/o/r")
+        self.assertEqual(second["cwd"], "~/Library/Mobile Documents")
+        self.assertIsNone(second["repo"])
+
+    def test_push_resolves_worktree_outside_ghq_root(self) -> None:
+        """A worktree outside the ghq root maps back to its main clone's slug."""
+        main = self.ghq_root / "github.com" / "o" / "wt"
+        main.mkdir(parents=True)
+        git = ["git", "-C", str(main), "-c", "user.name=t", "-c", "user.email=t@example.com"]
+        subprocess.run([*git, "init", "-q"], check=True)
+        subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+        worktree = self.home / "worktrees" / "feature"
+        subprocess.run([*git, "worktree", "add", "-q", str(worktree)], check=True)
+        self.set_cmux_state(list=[workspace(0, str(worktree))])
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.snapshot()["workspaces"][0]["repo"], "github.com/o/wt")
+
+    def test_push_excludes_remote_workspaces(self) -> None:
+        """SSH and cloud VM workspaces are skipped with a warning."""
+        self.set_cmux_state(list=[workspace(0, str(self.home)), workspace(1, str(self.home), remote=True)])
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(self.snapshot()["workspaces"]), 1)
+        self.assertIn("skipping 1 remote workspace", result.stderr)
+
+    def test_push_warns_when_several_windows_have_workspaces(self) -> None:
+        """Only the current window is captured, and the user is told so."""
+        self.set_cmux_state(
+            list=[workspace(0, str(self.home))],
+            tree={"windows": [{"workspace_count": 1}, {"workspace_count": 3}]},
+        )
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("2 windows have workspaces", result.stderr)
+
+    def test_push_records_groups_and_workspace_attributes(self) -> None:
+        """Group membership, colors, icon, pin, description and selection survive."""
+        self.set_cmux_state(
+            list=[
+                workspace(0, str(self.home), ws_ref="a", color="#E63946", pinned=True),
+                workspace(1, str(self.home), ws_ref="b", description="notes", selected=True),
+            ],
+            groups=[
+                {
+                    "ref": "G",
+                    "name": "sforzando",
+                    "member_workspace_refs": ["a", "b"],
+                    "custom_color": "#457B9D",
+                    "icon_symbol": "folder.fill",
+                    "is_collapsed": True,
+                }
+            ],
+        )
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        snap = self.snapshot()
+        self.assertEqual(snap["version"], 1)
+        self.assertEqual(snap["host"], "TestMac")
+        self.assertEqual(
+            snap["groups"],
+            [
+                {
+                    "key": "g1",
+                    "name": "sforzando",
+                    "color": "#457B9D",
+                    "icon": "folder.fill",
+                    "collapsed": True,
+                }
+            ],
+        )
+        first, second = snap["workspaces"]
+        self.assertEqual((first["group"], first["color"], first["pinned"]), ("g1", "#E63946", True))
+        self.assertEqual((second["description"], second["selected"]), ("notes", True))
+        self.assertEqual(self.mutating_calls(), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -17,6 +17,19 @@ DOWNLOAD_TIMEOUT="${CMUX_SYNC_DOWNLOAD_TIMEOUT:-30}"
 # Keeps cmux's deprecation and hint chatter out of output that jq parses
 export CMUX_QUIET=1
 
+SCHEMA_VERSION=1
+
+# Every assumption about cmux's JSON field names lives here, so a cmux update
+# that renames a field only needs these definitions changed.
+JQ_DEFS='
+def ws_items: if type == "array" then . else .workspaces end;
+def grp_items: .groups // [];
+def grp_members: .member_workspace_refs;
+def grp_color: .custom_color;
+def grp_icon: .icon_symbol;
+def grp_collapsed: .is_collapsed // false;
+'
+
 usage() {
   cat <<'EOF'
 usage: cmux-sync <command>
@@ -78,6 +91,90 @@ ensure_local() {
   done
 }
 
+# Prints host/owner/name when the directory belongs to a ghq checkout, nothing otherwise
+repo_of() {
+  local dir=$1 root=$2 main
+  case "$dir" in
+    "$root"/*) main=$dir ;;
+    *)
+      # A worktree outside the ghq root still shares its main clone's git dir
+      main=$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 0
+      main=${main%/.git}
+      ;;
+  esac
+  case "$main" in
+    "$root"/*) ;;
+    *) return 0 ;;
+  esac
+  # ghq lays clones out as host/owner/name, so anything shallower is not a repository
+  printf '%s\n' "${main#"$root"/}" | awk -F/ 'NF >= 3 { print $1 "/" $2 "/" $3 }'
+}
+
+build_snapshot() {
+  local root ws groups windows remote_count repos='{}' dir repo
+  root=$(ghq root)
+  ws=$(cmux workspace list --json)
+  groups=$(cmux workspace-group list --json)
+
+  windows=$(cmux tree --json | jq '[.windows[] | select(.workspace_count > 0)] | length')
+  [ "$windows" -le 1 ] || warn "$windows windows have workspaces; only the current window is captured"
+  remote_count=$(jq "$JQ_DEFS"'[ws_items[] | select(.remote.enabled // false)] | length' <<<"$ws")
+  [ "$remote_count" -eq 0 ] || warn "skipping $remote_count remote workspace(s); SSH and cloud VM sessions cannot be recreated"
+
+  while IFS= read -r dir; do
+    [ -n "$dir" ] || continue
+    repo=$(repo_of "$dir" "$root")
+    repos=$(jq -c --arg d "$dir" --arg r "$repo" '. + {($d): (if $r == "" then null else $r end)}' <<<"$repos")
+  done < <(jq -r "$JQ_DEFS"'ws_items[].current_directory // empty' <<<"$ws")
+
+  jq -n \
+    --argjson ws "$ws" --argjson gs "$groups" --argjson repos "$repos" \
+    --arg host "$(scutil --get LocalHostName)" \
+    --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --arg home "$HOME" --argjson version "$SCHEMA_VERSION" \
+    "$JQ_DEFS"'
+    def tilde:
+      if . == $home then "~"
+      elif startswith($home + "/") then "~" + .[($home | length):]
+      else . end;
+    [$gs | grp_items | to_entries[] | {key: "g\(.key + 1)", g: .value}] as $keyed
+    | ([$keyed[] | .key as $k | .g | grp_members[] | {(.): $k}] | add // {}) as $group_of
+    | ($ws | ws_items | map(select((.remote.enabled // false) | not)) | sort_by(.index)) as $local
+    | {
+        version: $version,
+        createdAt: $now,
+        host: $host,
+        groups: [$keyed[] | {
+          key,
+          name: .g.name,
+          color: (.g | grp_color),
+          icon: (.g | grp_icon),
+          collapsed: (.g | grp_collapsed)
+        }],
+        workspaces: [$local[] | {
+          title: (if .has_custom_title then .custom_title else null end),
+          color: .custom_color,
+          cwd: (.current_directory | tilde),
+          repo: $repos[.current_directory],
+          group: ($group_of[.ref] // null),
+          pinned: (.pinned // false),
+          description: .description,
+          selected: (.selected // false)
+        }]
+      }'
+}
+
+cmd_push() {
+  local snapshot tmp
+  snapshot=$(build_snapshot)
+  mkdir -p "$SYNC_DIR"
+  # Rename into place so iCloud never uploads a half-written snapshot
+  tmp="$SYNC_DIR/.snapshot.json.tmp.$$"
+  printf '%s\n' "$snapshot" >"$tmp"
+  mv "$tmp" "$SNAPSHOT"
+  jq -r '"pushed \(.workspaces | length) workspaces and \(.groups | length) groups from \(.host)"' <<<"$snapshot"
+}
+
 cmd_show() {
   local file=${1:-$SNAPSHOT}
   ensure_local "$file"
@@ -100,6 +197,7 @@ main() {
   local cmd=$1
   shift
   case "$cmd" in
+    push) cmd_push "$@" ;;
     show) cmd_show "$@" ;;
     -h | --help | help) usage ;;
     *)
