@@ -1,0 +1,7 @@
+{{- /*
+Ulanzi Studio drives the one Ulanzi D200X deck, which lives on the Mac Studio and
+not the MacBook Air. Keying on the app itself rather than a hostname list means a
+renamed or new machine follows whatever is actually installed. Renders "true" or
+nothing, so callers can use it directly in an `if`.
+*/ -}}
+{{- if stat "/Applications/Ulanzi Studio.app" }}true{{ end -}}

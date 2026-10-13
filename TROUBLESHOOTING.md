@@ -48,6 +48,10 @@
   - [KBが欠けてノートが作られない](#kbが欠けてノートが作られない)
   - [「unbalanced ambient-context markers」で失敗する](#unbalanced-ambient-context-markersで失敗する)
   - [Markdownが崩れる・回帰テスト](#markdownが崩れる回帰テスト)
+- [AgentDeck / Ulanzi D200X](#agentdeck--ulanzi-d200x)
+  - [キーが OFFLINE のまま](#キーが-offline-のまま)
+  - [デーモンの導入スクリプトが失敗する](#デーモンの導入スクリプトが失敗する)
+  - [アンインストール](#アンインストール)
 - [ツール別の問題](#ツール別の問題)
   - [Homebrew / Linuxbrewの問題](#homebrew--linuxbrewの問題)
   - [topgradeの更新が失敗する](#topgradeの更新が失敗する)
@@ -903,6 +907,62 @@ markdownlint-cli2 "Daily/*.md"
 
 崩れたノートの本文を再現するテストを `tests/test_ambient_daily.py` に足してから、`clean_text()` か `render_section()` を直す。
 `/usr/bin/python3` は 3.9 なので、3.10 以降の構文は使えない。
+
+## AgentDeck / Ulanzi D200X
+
+Claude Code の状態を Ulanzi D200X のキーに出す。構成は 3 つで、置き場所と管理方法が違う。
+
+| 構成要素 | 場所 | 管理 |
+| --- | --- | --- |
+| フック（12 イベント） | `~/.claude/settings.json` | chezmoi。全 Mac に配る |
+| デーモン（`@agentdeck/bridge`） | mise の node@lts の global、LaunchAgent `dev.agentdeck.daemon` | `run_onchange_after_ulanzi-agentdeck.sh.tmpl`。`Ulanzi Studio.app` がある Mac だけ |
+| Ulanzi プラグイン | `~/Library/Application Support/Ulanzi/UlanziDeck/Plugins/com.ulanzi.ulanzistudio.agentdeck.ulanziPlugin/` | Ulanzi Marketplace から手動 |
+
+設計の理由:
+
+- フックはデーモンが無いと `127.0.0.1:9120` への接続が即座に拒否されて終わるので、`settings.json` をテンプレート化せず全 Mac に置いている。
+- フックの中身は `@agentdeck/setup` が生成するものと同一にしてある。`agentdeck daemon install` は同じ内容で書き直すだけなので、chezmoi の source とずれない。
+- デーモンは `--loopback` で入れる。プラグインは同じ Mac から繋ぐだけなので、mDNS・LAN スキャン・BLE は使わない。
+- スクリプトは `AGENTDECK_NO_CODEX_HOOKS=1` と `AGENTDECK_NO_OPENCODE_HOOKS=1` を付けて `daemon install` を実行する。付けないと `~/.codex/config.toml` と `~/.config/opencode/plugins/agentdeck.js` に書き込まれる。
+- スクリプト先頭に `node --version` を埋め込んでいる。LTS が上がるとネイティブモジュール（node-pty、better-sqlite3）を入れ直すため、自動で再実行される。
+
+### キーが OFFLINE のまま
+
+**確認:**
+
+```bash
+launchctl print "gui/$(id -u)/dev.agentdeck.daemon" | grep -m1 "state ="
+lsof -nP -iTCP:9120 -sTCP:LISTEN
+tail ~/.agentdeck/daemon-stderr.log
+```
+
+**解決方法:**
+
+デーモンが止まっていれば `launchctl kickstart -k "gui/$(id -u)/dev.agentdeck.daemon"` で起こす。
+LaunchAgent ごと無ければ、スクリプトを再実行する（`chezmoi state delete-bucket --bucket=scriptState` は全スクリプトが再実行されるので避け、スクリプト本体に空行を足すなどして内容を変えてから `chezmoi apply`）。
+キーにセッションが出ないときは、フックは起動時に読まれるので Claude Code のセッションを新しく開く。
+
+### デーモンの導入スクリプトが失敗する
+
+**症状1:** `sharp: Please add node-gyp to your dependencies` で `npm install` が失敗する。
+
+Homebrew の libvips（netlify-cli の依存）があると、sharp がプリビルド版を使わずソースビルドに回る。
+スクリプトは `SHARP_IGNORE_GLOBAL_LIBVIPS=1` を付けて回避している。手で入れるときも同じ環境変数を付ける。
+
+**症状2:** `mise ERROR "agentdeck" couldn't exec process: Permission denied`
+
+bridge 1.9.0 は `dist/cli.js` が実行権限なしで入る。LaunchAgent もこのファイルを直接実行するため、スクリプトで `chmod +x` している。
+
+### アンインストール
+
+```bash
+mise exec node@lts -- agentdeck daemon uninstall      # LaunchAgent を外す
+mise exec node@lts -- npm uninstall --global @agentdeck/bridge
+rm -rf ~/.agentdeck
+```
+
+フックは source の `private_dot_claude/settings.json` から `AGENTDECK_PORT` を含むエントリを消して `chezmoi apply` する。
+プラグインは Ulanzi Studio から削除する。
 
 ## ツール別の問題
 

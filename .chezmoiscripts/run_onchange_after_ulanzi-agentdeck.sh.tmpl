@@ -1,0 +1,32 @@
+{{- if and (eq .chezmoi.os "darwin") (includeTemplate "ulanzi-studio-installed" .) (lookPath "mise") -}}
+#!/bin/bash
+# The bridge ships native bindings (node-pty, better-sqlite3) built for one node
+# ABI, so an LTS bump must reinstall it.
+# node: {{ output "mise" "exec" "node@lts" "--" "node" "--version" | trim }}
+
+set -eufo pipefail
+
+# Only the daemon is host-limited. The Claude Code hooks stay in the shared
+# ~/.claude/settings.json on every Mac: without a daemon they fail fast on a
+# refused loopback connection, which is cheaper than templating that file.
+# The Ulanzi Studio plugin itself comes from the Ulanzi Marketplace by hand.
+
+# Homebrew's libvips (pulled in by netlify-cli) makes sharp skip its prebuilt
+# binary and attempt a source build that fails without node-gyp.
+echo "📦 Installing AgentDeck bridge..."
+mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@1.9.0
+# bridge 1.9.0 lands its bin target without the exec bit, and both the CLI call
+# below and the LaunchAgent exec that file directly.
+chmod +x "$(mise exec node@lts -- npm root --global)/@agentdeck/bridge/dist/cli.js"
+
+# The LaunchAgent bakes in this shell's PATH and `which agentdeck`, so it must
+# run under the same mise node the bridge was just installed into.
+# --loopback: the deck plugin talks to the daemon on this Mac only, so skip the
+# mDNS/UDP beacon, LAN sweep and BLE scans the default posture enables.
+# Codex and OpenCode are not used here, yet daemon install would hook into any
+# ~/.codex/config.toml and write an OpenCode plugin unconditionally.
+echo "🔄 Registering AgentDeck daemon LaunchAgent..."
+mise exec node@lts -- env AGENTDECK_NO_CODEX_HOOKS=1 AGENTDECK_NO_OPENCODE_HOOKS=1 \
+  agentdeck daemon install --loopback
+echo "✅ AgentDeck daemon installed"
+{{- end }}

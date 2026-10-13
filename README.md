@@ -135,6 +135,17 @@ chezmoi apply
 # d. Run it once, then allow AmbientDaily to access the Documents folder and
 #    iCloud Drive in the dialogs that follow.
 launchctl kickstart "gui/$(id -u)/jp.co.sforzando.ambient-daily"
+
+# 7. (macOS, optional) AgentDeck on the Ulanzi D200X deck
+# Only for Macs with Ulanzi Studio (the Mac Studio, not the MacBook Air).
+# chezmoi installs the AgentDeck daemon only where /Applications/Ulanzi Studio.app
+# exists. Its Claude Code hooks ship to every Mac and fail fast without a daemon.
+# a. Install Ulanzi Studio by hand (it has no Homebrew cask), then deploy the daemon:
+chezmoi apply
+# b. Ulanzi Studio Marketplace: install the AgentDeck plugin, then drop the
+#    AgentDeck action on every key it may use (a dedicated page works best).
+#    Plugins live in ~/Library/Application Support/Ulanzi/UlanziDeck/Plugins/.
+# c. Start a new Claude Code session; each session gets its own key.
 ```
 
 > [!NOTE]
@@ -236,6 +247,7 @@ This repository manages configurations for the following applications:
 | **SSH**      | Tailscale SSH host aliases (keyless)    | `~/.ssh/config`                            |
 | **ambient-daily** | Writes Obsidian daily notes from Ambient Context's KB (Macs with Ambient Context) | `~/.local/bin/ambient-daily`, `~/.config/ambient-daily/`, `~/Library/LaunchAgents/` |
 | **Claude Desktop MCP** | Merges the `ambient-context` MCP server into Desktop's config (Macs with Ambient Context) | `~/Library/Application Support/Claude/claude_desktop_config.json` (`mcpServers` only) |
+| **AgentDeck** | Shows Claude Code sessions on the Ulanzi D200X (daemon on Macs with Ulanzi Studio) | `~/.claude/settings.json` (hooks), `~/Library/LaunchAgents/dev.agentdeck.daemon.plist`, `~/.agentdeck/` |
 
 > [!NOTE]
 > ambient-daily runs through a generated `~/Applications/AmbientDaily.app` so it can hold

@@ -91,6 +91,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\nRESP=$(curl -s -X POST \"http://127.0.0.1:$PORT/hooks/PreToolUse\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" --max-time 60 -d @- 2>/dev/null)\nprintf '%s' \"${RESP:-}\""
+          }
+        ]
       }
     ],
     "Notification": [
@@ -110,6 +119,15 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/Notification\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
           }
         ]
       }
@@ -132,6 +150,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/SessionStart\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -141,6 +168,15 @@
           {
             "type": "command",
             "command": "jq '. + {\"notification_type\": \"stop\"}' | ~/.claude/scripts/notify.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\nRESP=$(curl -s -X POST \"http://127.0.0.1:$PORT/hooks/Stop\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" --max-time 10 -d @- 2>/dev/null)\nprintf '%s' \"${RESP:-}\""
           }
         ]
       }
@@ -153,6 +189,15 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/PostToolUse\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
           }
         ]
       }
@@ -179,6 +224,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/SubagentStart\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -191,6 +245,15 @@
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/SubagentStop\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -201,6 +264,59 @@
           {
             "type": "command",
             "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/SessionEnd\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/PostToolUseFailure\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/UserPromptSubmit\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/TaskCompleted\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PORT=\"${AGENTDECK_PORT:-}\"\ncase \"$PORT\" in ''|*[!0-9]*) PORT=\"\" ;; *) [ \"$PORT\" -ge 1 ] 2>/dev/null && [ \"$PORT\" -le 65535 ] 2>/dev/null || PORT=\"\" ;; esac\nif [ -z \"$PORT\" ]; then\n  for F in \"$HOME/.agentdeck/daemon.json\" \"$HOME/Library/Containers/bound.serendipity.agent.deck/Data/Library/Application Support/AgentDeck/daemon.json\" \"$HOME/Library/Group Containers/group.bound.serendipity.agent.deck/daemon.json\"; do\n    [ -f \"$F\" ] || continue\n    P=$(python3 -c \"import json,sys,signal;signal.signal(signal.SIGALRM,lambda *_:sys.exit(0));signal.setitimer(signal.ITIMER_REAL,0.2);d=json.load(open(sys.argv[1]));p=d.get('httpPort') or d.get('port');print(p if type(p) is int and 1 <= p <= 65535 else '')\" \"$F\" 2>/dev/null)\n    [ -n \"$P\" ] && curl -sf --connect-timeout 0.2 --max-time 0.3 \"http://127.0.0.1:$P/health\" >/dev/null 2>&1 && { PORT=\"$P\"; break; }\n  done\nfi\nPORT=\"${PORT:-9120}\"\ncurl -sf --connect-timeout 0.2 --max-time 0.8 -X POST \"http://127.0.0.1:$PORT/hooks/TeammateIdle\" -H 'Content-Type: application/json' -H \"X-AgentDeck-Pid: $PPID\" -d @- >/dev/null 2>&1 || true"
           }
         ]
       }
