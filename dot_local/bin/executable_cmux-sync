@@ -1,0 +1,112 @@
+#!/bin/bash
+# cmux-sync: carry the cmux workspace layout (groups, order, color, cwd, title)
+# between Macs through a snapshot file in iCloud Drive.
+#
+# Written for /bin/bash 3.2 so it needs no Homebrew bash and shellcheck can lint it
+# (shellcheck cannot parse zsh). jq does the JSON work; this file only orchestrates.
+
+set -euo pipefail
+
+SYNC_DIR="${CMUX_SYNC_DIR:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/cmux-sync}"
+STATE_DIR="${CMUX_SYNC_STATE_DIR:-$HOME/.local/state/cmux-sync}"
+SNAPSHOT="$SYNC_DIR/snapshot.json"
+LOG_FILE="$STATE_DIR/last-pull.log"
+# iCloud may still be fetching a snapshot that the other Mac wrote seconds ago
+DOWNLOAD_TIMEOUT="${CMUX_SYNC_DOWNLOAD_TIMEOUT:-30}"
+
+# Keeps cmux's deprecation and hint chatter out of output that jq parses
+export CMUX_QUIET=1
+
+usage() {
+  cat <<'EOF'
+usage: cmux-sync <command>
+
+  push                 save this Mac's workspace layout to iCloud Drive
+  pull [--yes] [--dry-run] [--from <file>]
+                       replace this Mac's workspaces with the saved layout
+  show [<file>]        print the saved layout without touching cmux
+EOF
+}
+
+die() {
+  printf 'cmux-sync: %s\n' "$*" >&2
+  exit 1
+}
+
+warn() {
+  printf 'cmux-sync: warning: %s\n' "$*" >&2
+}
+
+# The caller's workspace may close at the end of a pull, taking the terminal
+# output with it, so anything worth reading afterwards also goes to the log file
+log() {
+  mkdir -p "$STATE_DIR"
+  printf '%s\n' "$*" | tee -a "$LOG_FILE" >&2
+}
+
+notify() {
+  cmux notify --title "$1" --body "$2" >/dev/null 2>&1 || true
+}
+
+from_tilde() {
+  case "$1" in
+    "~") printf '%s\n' "$HOME" ;;
+    \~/*) printf '%s/%s\n' "$HOME" "${1#\~/}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+nearest_dir() {
+  local dir=$1
+  while [ ! -d "$dir" ]; do
+    dir=$(dirname "$dir")
+  done
+  printf '%s\n' "$dir"
+}
+
+# iCloud keeps evicted or not-yet-synced files as ".<name>.icloud" placeholders
+ensure_local() {
+  local file=$1 placeholder waited=0
+  [ -f "$file" ] && return 0
+  placeholder="$(dirname "$file")/.$(basename "$file").icloud"
+  [ -f "$placeholder" ] || die "no snapshot at $file; run 'cmux-sync push' on the other Mac first"
+  brctl download "$file" >/dev/null 2>&1 || true
+  while [ ! -f "$file" ]; do
+    [ "$waited" -lt "$DOWNLOAD_TIMEOUT" ] || die "iCloud did not download $file within ${DOWNLOAD_TIMEOUT}s"
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+
+cmd_show() {
+  local file=${1:-$SNAPSHOT}
+  ensure_local "$file"
+  jq -r '
+    . as $s
+    | ((now - (.createdAt | fromdateiso8601)) / 60 | floor) as $age
+    | "from \(.host), \($age) min ago, \(.workspaces | length) workspaces, \(.groups | length) groups",
+      (.workspaces[]
+        | (if .selected then "*" else " " end) as $mark
+        | (if .group then (.group as $g | "  [" + ([$s.groups[] | select(.key == $g) | .name][0] // $g) + "]") else "" end) as $grp
+        | "\($mark) \(.title // "(auto title)")  \(.cwd)\($grp)")
+  ' "$file"
+}
+
+main() {
+  if [ $# -lt 1 ]; then
+    usage >&2
+    exit 2
+  fi
+  local cmd=$1
+  shift
+  case "$cmd" in
+    show) cmd_show "$@" ;;
+    -h | --help | help) usage ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"
