@@ -433,5 +433,207 @@ class PushTest(CmuxSyncTestCase):
         self.assertEqual(self.mutating_calls(), [])
 
 
+class PullTest(CmuxSyncTestCase):
+    """cmux-sync pull."""
+
+    def setUp(self) -> None:
+        """Gives the receiving Mac three open workspaces, the middle one running pull."""
+        super().setUp()
+        self.set_cmux_state(list=[workspace(i, str(self.home)) for i in range(3)])
+        self.env["CMUX_WORKSPACE_ID"] = "old-1"
+
+    def creates(self) -> list[list[str]]:
+        """Returns the new-workspace calls in order."""
+        return [c for c in self.cmux_calls() if c[:1] == ["new-workspace"]]
+
+    @staticmethod
+    def flag(call: list[str], name: str) -> str | None:
+        """Returns the value that follows a flag in one recorded call.
+
+        Args:
+            call: One recorded argv.
+            name: Flag such as "--cwd".
+
+        Returns:
+            The flag's value, or None when the flag is absent.
+        """
+        return call[call.index(name) + 1] if name in call else None
+
+    def test_pull_rejects_unknown_version(self) -> None:
+        """A snapshot from a newer schema is refused before touching anything."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}], version=2))
+        result = self.run_sync("pull", "--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("version 2 is not supported", result.stderr)
+        self.assertEqual(self.mutating_calls(), [])
+
+    def test_pull_rejects_empty_snapshot(self) -> None:
+        """An empty snapshot would close everything, so it is refused."""
+        self.write_snapshot(make_snapshot([]))
+        result = self.run_sync("pull", "--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to close everything", result.stderr)
+        self.assertEqual(self.mutating_calls(), [])
+
+    def test_pull_stops_when_answer_is_not_yes(self) -> None:
+        """Without --yes, anything but y leaves cmux untouched."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        for answer in ("n\n", ""):
+            result = self.run_sync("pull", stdin=answer)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("aborted", result.stderr)
+        self.assertEqual(self.mutating_calls(), [])
+
+    def test_pull_dry_run_resolves_cwds_without_side_effects(self) -> None:
+        """Dry run shows each resolved directory and pending clone, changing nothing."""
+        exists = self.ghq_root / "github.com" / "o" / "here"
+        exists.mkdir(parents=True)
+        main_only = self.ghq_root / "github.com" / "o" / "main"
+        main_only.mkdir(parents=True)
+        self.write_snapshot(
+            make_snapshot(
+                [
+                    {"cwd": "~/Workspace/github.com/o/here", "repo": "github.com/o/here"},
+                    {"cwd": "~/worktrees/main-feature", "repo": "github.com/o/main"},
+                    {"cwd": "~/Workspace/github.com/o/new", "repo": "github.com/o/new"},
+                    {"cwd": "~/gone/deeper"},
+                ]
+            )
+        )
+        result = self.run_sync("pull", "--dry-run")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"at {exists}", result.stdout)
+        self.assertIn(f"at {main_only}", result.stdout)
+        self.assertIn("would clone github.com/o/new", result.stdout)
+        self.assertIn(f"at {self.ghq_root}/github.com/o/new", result.stdout)
+        self.assertIn(f"at {self.home}\n", result.stdout)
+        self.assertEqual(self.mutating_calls(), [])
+        self.assertFalse(self.ghq_calls_file.exists())
+
+    def test_pull_creates_everything_before_closing_and_closes_caller_last(self) -> None:
+        """Old workspaces close only after creation, and the caller closes last."""
+        self.write_snapshot(make_snapshot([{"cwd": "~", "selected": True}, {"cwd": "~"}]))
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.mutating_calls()
+        kinds = [c[0] for c in calls]
+        first_close = kinds.index("close-workspace")
+        self.assertNotIn("new-workspace", kinds[first_close:])
+        self.assertIn(["reorder-workspaces", "--order", "new-1,new-2"], calls[:first_close])
+        closes = [self.flag(c, "--workspace") for c in calls if c[0] == "close-workspace"]
+        self.assertEqual(closes, ["old-0", "old-2", "old-1"])
+        self.assertEqual(calls[-1], ["close-workspace", "--workspace", "old-1", "--force"])
+        self.assertIn(["select-workspace", "--workspace", "new-1"], calls)
+
+    def test_pull_applies_workspace_attributes(self) -> None:
+        """Title, description, color and pin reach cmux unchanged."""
+        tricky = 'Paper "Talk" \'s'
+        self.write_snapshot(
+            make_snapshot(
+                [
+                    {
+                        "cwd": "~",
+                        "title": tricky,
+                        "description": "d e",
+                        "color": "#E63946",
+                        "pinned": True,
+                    },
+                    {"cwd": "~"},
+                ]
+            )
+        )
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        first, second = self.creates()
+        self.assertEqual(self.flag(first, "--cwd"), str(self.home))
+        self.assertEqual(self.flag(first, "--name"), tricky)
+        self.assertEqual(self.flag(first, "--description"), "d e")
+        self.assertIsNone(self.flag(second, "--name"))
+        calls = self.cmux_calls()
+        self.assertIn(
+            ["workspace-action", "--action", "set-color", "--workspace", "new-1", "--color", "#E63946"],
+            calls,
+        )
+        self.assertIn(["workspace-action", "--action", "pin", "--workspace", "new-1"], calls)
+
+    def test_pull_keeps_paths_with_spaces_whole(self) -> None:
+        """A cwd with spaces is passed as one argument."""
+        spaced = self.home / "Library" / "Mobile Documents"
+        spaced.mkdir(parents=True)
+        self.write_snapshot(make_snapshot([{"cwd": "~/Library/Mobile Documents"}]))
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.flag(self.creates()[0], "--cwd"), str(spaced))
+
+    def test_pull_builds_groups_with_a_fresh_key_each_run(self) -> None:
+        """Groups get their members, look, and a per-run idempotency key."""
+        groups = [{"key": "g1", "name": "sfz", "color": "#457B9D", "icon": "folder.fill", "collapsed": True}]
+        self.write_snapshot(
+            make_snapshot(
+                [{"cwd": "~", "group": "g1"}, {"cwd": "~"}, {"cwd": "~", "group": "g1"}],
+                groups,
+            )
+        )
+        keys = []
+        for _ in range(2):
+            self.cmux_calls_file.unlink(missing_ok=True)
+            self.set_cmux_state(list=[workspace(i, str(self.home)) for i in range(3)])
+            result = self.run_sync("pull", "--yes")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            calls = self.cmux_calls()
+            create = next(c for c in calls if c[:2] == ["workspace-group", "create"])
+            self.assertEqual(self.flag(create, "--from"), "new-1,new-3")
+            self.assertEqual(self.flag(create, "--name"), "sfz")
+            keys.append(self.flag(create, "--idempotency-key"))
+            self.assertIn(["workspace-group", "set-color", "grp-1", "--hex", "#457B9D"], calls)
+            self.assertIn(["workspace-group", "set-icon", "grp-1", "--symbol", "folder.fill"], calls)
+            self.assertIn(["workspace-group", "collapse", "grp-1"], calls)
+        self.assertNotEqual(keys[0], keys[1])
+
+    def test_pull_clones_missing_repos_and_falls_back_on_failure(self) -> None:
+        """Missing repos are cloned; a failed clone opens at the nearest parent."""
+        self.write_snapshot(
+            make_snapshot(
+                [
+                    {"cwd": "~/Workspace/github.com/o/ok", "repo": "github.com/o/ok"},
+                    {"cwd": "~/Workspace/github.com/o/bad", "repo": "github.com/o/bad"},
+                ]
+            )
+        )
+        result = self.run_sync("pull", "--yes", env={"FAKE_GHQ_FAIL": "github.com/o/bad"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        ok, bad = self.creates()
+        self.assertEqual(self.flag(ok, "--cwd"), f"{self.ghq_root}/github.com/o/ok")
+        # github.com/o exists because the sibling clone succeeded
+        self.assertEqual(self.flag(bad, "--cwd"), f"{self.ghq_root}/github.com/o")
+        log = (self.state_dir / "last-pull.log").read_text()
+        self.assertIn("clone failed: github.com/o/bad", log)
+
+    def test_pull_closes_nothing_when_reordering_fails(self) -> None:
+        """A failure before the close phase leaves every old workspace open."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        self.set_cmux_state(
+            list=[workspace(i, str(self.home)) for i in range(3)],
+            fail_on=["reorder-workspaces"],
+        )
+        result = self.run_sync("pull", "--yes")
+        self.assertNotEqual(result.returncode, 0)
+        kinds = [c[0] for c in self.mutating_calls()]
+        self.assertNotIn("close-workspace", kinds)
+        log = (self.state_dir / "last-pull.log").read_text()
+        self.assertIn("previous workspaces are untouched", log)
+        self.assertIn("new-1", log)
+
+    def test_pull_saves_current_layout_before_changing_it(self) -> None:
+        """The receiving Mac's layout is saved and can be pulled back with --from."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        result = self.run_sync("pull", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        backup = json.loads((self.state_dir / "before-pull.json").read_text())
+        self.assertEqual(len(backup["workspaces"]), 3)
+        restore = self.run_sync("pull", "--dry-run", "--from", str(self.state_dir / "before-pull.json"))
+        self.assertEqual(restore.returncode, 0, restore.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

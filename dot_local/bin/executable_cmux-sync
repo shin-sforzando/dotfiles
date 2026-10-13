@@ -13,6 +13,15 @@ SNAPSHOT="$SYNC_DIR/snapshot.json"
 LOG_FILE="$STATE_DIR/last-pull.log"
 # iCloud may still be fetching a snapshot that the other Mac wrote seconds ago
 DOWNLOAD_TIMEOUT="${CMUX_SYNC_DOWNLOAD_TIMEOUT:-30}"
+CLONE_JOBS=4
+# A fresh value per run keeps group idempotency keys from matching an earlier pull
+RUN_ID="$(date +%s)-$$"
+
+PHASE=init
+CREATED=""
+CLONE_FAILED=""
+PENDING=""
+DIRS=()
 
 # Keeps cmux's deprecation and hint chatter out of output that jq parses
 export CMUX_QUIET=1
@@ -28,6 +37,7 @@ def grp_members: .member_workspace_refs;
 def grp_color: .custom_color;
 def grp_icon: .icon_symbol;
 def grp_collapsed: .is_collapsed // false;
+def new_grp_id: .group.ref;
 '
 
 usage() {
@@ -175,6 +185,211 @@ cmd_push() {
   jq -r '"pushed \(.workspaces | length) workspaces and \(.groups | length) groups from \(.host)"' <<<"$snapshot"
 }
 
+# Decides where each snapshot workspace opens on this Mac. Fills DIRS (left empty
+# for repos that still need cloning) and PENDING (newline-separated repos to clone).
+resolve_dirs() {
+  local snap=$1 root=$2 count i cwd repo
+  count=$(jq '.workspaces | length' <<<"$snap")
+  DIRS=()
+  PENDING=""
+  for ((i = 0; i < count; i++)); do
+    cwd=$(from_tilde "$(jq -r ".workspaces[$i].cwd" <<<"$snap")")
+    repo=$(jq -r ".workspaces[$i].repo // empty" <<<"$snap")
+    if [ -d "$cwd" ]; then
+      DIRS[i]=$cwd
+    elif [ -n "$repo" ] && [ -d "$root/$repo" ]; then
+      # The worktree or subdirectory lives only on the other Mac; the main clone is a fine start
+      DIRS[i]=$root/$repo
+    elif [ -n "$repo" ]; then
+      DIRS[i]=""
+      PENDING="$PENDING$repo"$'\n'
+    else
+      DIRS[i]=$(nearest_dir "$cwd")
+    fi
+  done
+}
+
+# A failed clone falls back to the nearest existing parent so the workspace keeps
+# its place in the order and its group instead of disappearing
+clone_pending() {
+  local snap=$1 root=$2 count i repo
+  [ -n "$PENDING" ] || return 0
+  printf '%s' "$PENDING" | sort -u | xargs -P "$CLONE_JOBS" -n 1 ghq get >/dev/null 2>&1 || true
+  count=$(jq '.workspaces | length' <<<"$snap")
+  for ((i = 0; i < count; i++)); do
+    [ -z "${DIRS[i]}" ] || continue
+    repo=$(jq -r ".workspaces[$i].repo" <<<"$snap")
+    if [ -d "$root/$repo" ]; then
+      DIRS[i]=$root/$repo
+    else
+      DIRS[i]=$(nearest_dir "$root/$repo")
+      CLONE_FAILED="$CLONE_FAILED $repo"
+    fi
+  done
+}
+
+print_plan() {
+  local snap=$1 root=$2 count i dir title
+  count=$(jq '.workspaces | length' <<<"$snap")
+  printf '%s' "$PENDING" | sort -u | sed '/^$/d; s/^/would clone /'
+  for ((i = 0; i < count; i++)); do
+    dir=${DIRS[i]}
+    [ -n "$dir" ] || dir="$root/$(jq -r ".workspaces[$i].repo" <<<"$snap")"
+    title=$(jq -r ".workspaces[$i].title // \"(auto title)\"" <<<"$snap")
+    printf 'would create %s at %s\n' "$title" "$dir"
+  done
+}
+
+create_workspace() {
+  local dir=$1 title=$2 description=$3 id
+  local -a args=(new-workspace --cwd "$dir" --focus false)
+  [ -z "$title" ] || args+=(--name "$title")
+  [ -z "$description" ] || args+=(--description "$description")
+  # new-workspace answers "OK workspace:<n>" even with --json; the ref works wherever an id does
+  id=$(cmux "${args[@]}" | awk '$1 == "OK" { print $2; exit }')
+  [ -n "$id" ] || die "cmux new-workspace returned no workspace id"
+  printf '%s\n' "$id"
+}
+
+on_exit() {
+  local rc=$?
+  [ "$rc" -ne 0 ] || return 0
+  case "$PHASE" in
+    create)
+      log "aborted before closing anything; your previous workspaces are untouched. created so far:${CREATED:- none}"
+      notify "cmux-sync pull aborted" "see $LOG_FILE"
+      ;;
+    close)
+      log "failed while closing the previous workspaces; the new layout is already in place"
+      notify "cmux-sync pull incomplete" "see $LOG_FILE"
+      ;;
+  esac
+}
+
+apply_pull() {
+  local snap=$1 count gcount i g id key members gid value self old_ids selected
+  local -a new_ids=()
+  count=$(jq '.workspaces | length' <<<"$snap")
+  gcount=$(jq '.groups | length' <<<"$snap")
+
+  mkdir -p "$STATE_DIR"
+  : >"$LOG_FILE"
+  build_snapshot >"$STATE_DIR/before-pull.json"
+  log "saved the current layout to $STATE_DIR/before-pull.json (undo with: cmux-sync pull --from that file)"
+  old_ids=$(cmux workspace list --json | jq -r "$JQ_DEFS"'ws_items[].id')
+
+  PHASE=create
+  trap on_exit EXIT
+  for ((i = 0; i < count; i++)); do
+    id=$(create_workspace "${DIRS[i]}" \
+      "$(jq -r ".workspaces[$i].title // empty" <<<"$snap")" \
+      "$(jq -r ".workspaces[$i].description // empty" <<<"$snap")")
+    new_ids[i]=$id
+    CREATED="$CREATED $id"
+    value=$(jq -r ".workspaces[$i].color // empty" <<<"$snap")
+    [ -z "$value" ] || cmux workspace-action --action set-color --workspace "$id" --color "$value" >/dev/null
+    value=$(jq -r ".workspaces[$i].pinned" <<<"$snap")
+    [ "$value" != true ] || cmux workspace-action --action pin --workspace "$id" >/dev/null
+  done
+
+  for ((g = 0; g < gcount; g++)); do
+    key=$(jq -r ".groups[$g].key" <<<"$snap")
+    members=""
+    for ((i = 0; i < count; i++)); do
+      [ "$(jq -r ".workspaces[$i].group // empty" <<<"$snap")" = "$key" ] || continue
+      members="${members:+$members,}${new_ids[i]}"
+    done
+    [ -n "$members" ] || continue
+    gid=$(cmux workspace-group create \
+      --name "$(jq -r ".groups[$g].name // \"Group\"" <<<"$snap")" \
+      --from "$members" \
+      --idempotency-key "cmux-sync-$RUN_ID-$key" --json | jq -r "$JQ_DEFS"'new_grp_id // empty')
+    [ -n "$gid" ] || die "cmux workspace-group create returned no group id"
+    value=$(jq -r ".groups[$g].color // empty" <<<"$snap")
+    [ -z "$value" ] || cmux workspace-group set-color "$gid" --hex "$value" >/dev/null
+    value=$(jq -r ".groups[$g].icon // empty" <<<"$snap")
+    [ -z "$value" ] || cmux workspace-group set-icon "$gid" --symbol "$value" >/dev/null
+    value=$(jq -r ".groups[$g].collapsed" <<<"$snap")
+    [ "$value" != true ] || cmux workspace-group collapse "$gid" >/dev/null
+  done
+
+  cmux reorder-workspaces --order "$(
+    IFS=,
+    printf '%s' "${new_ids[*]}"
+  )" >/dev/null
+
+  PHASE=close
+  self=${CMUX_WORKSPACE_ID:-}
+  while IFS= read -r id; do
+    if [ -z "$id" ] || [ "$id" = "$self" ]; then
+      continue
+    fi
+    # --force: the user already agreed to close every workspace, including ones running a process
+    cmux close-workspace --workspace "$id" --force >/dev/null || warn "could not close workspace $id"
+  done <<<"$old_ids"
+  selected=$(jq '[.workspaces[].selected] | index(true) // empty' <<<"$snap")
+  [ -z "$selected" ] || cmux select-workspace --workspace "${new_ids[selected]}" >/dev/null
+
+  PHASE=finished
+  log "created $count workspaces and $gcount groups from $(jq -r .host <<<"$snap")"
+  [ -z "$CLONE_FAILED" ] || log "clone failed:$CLONE_FAILED (opened at the nearest existing parent)"
+  notify "cmux-sync pull" "$count workspaces from $(jq -r .host <<<"$snap")"
+  # Closing the caller ends this shell, so it has to be the very last command
+  if [ -n "$self" ] && grep -qxF -- "$self" <<<"$old_ids"; then
+    cmux close-workspace --workspace "$self" --force >/dev/null
+  fi
+}
+
+cmd_pull() {
+  local assume_yes=0 dry_run=0 file=$SNAPSHOT snap version count host root answer
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --yes) assume_yes=1 ;;
+      --dry-run) dry_run=1 ;;
+      --from)
+        [ $# -ge 2 ] || die "--from needs a file"
+        file=$2
+        shift
+        ;;
+      *) die "unknown option for pull: $1" ;;
+    esac
+    shift
+  done
+
+  ensure_local "$file"
+  snap=$(cat "$file")
+  version=$(jq -r '.version' <<<"$snap")
+  [ "$version" = "$SCHEMA_VERSION" ] || die "snapshot version $version is not supported (expected $SCHEMA_VERSION)"
+  count=$(jq '.workspaces | length' <<<"$snap")
+  # Applying an empty snapshot would close every workspace and leave nothing behind
+  [ "$count" -gt 0 ] || die "snapshot has no workspaces; refusing to close everything"
+  host=$(jq -r '.host' <<<"$snap")
+  [ "$host" != "$(scutil --get LocalHostName)" ] || warn "this snapshot was saved on this Mac ($host)"
+
+  root=$(ghq root)
+  resolve_dirs "$snap" "$root"
+  jq -r '"pull \(.workspaces | length) workspaces and \(.groups | length) groups saved on \(.host) at \(.createdAt)"' <<<"$snap"
+  if [ "$dry_run" -eq 1 ]; then
+    print_plan "$snap" "$root"
+    return 0
+  fi
+  if [ -n "$PENDING" ]; then
+    printf 'will clone with ghq:\n'
+    printf '%s' "$PENDING" | sort -u | sed '/^$/d; s/^/  /'
+  fi
+  if [ "$assume_yes" -ne 1 ]; then
+    printf 'every workspace in this window closes after the new ones are created. continue? [y/N] '
+    read -r answer || answer=""
+    case "$answer" in
+      y | Y | yes) ;;
+      *) die "aborted; nothing was changed" ;;
+    esac
+  fi
+
+  clone_pending "$snap" "$root"
+  apply_pull "$snap"
+}
+
 cmd_show() {
   local file=${1:-$SNAPSHOT}
   ensure_local "$file"
@@ -198,6 +413,7 @@ main() {
   shift
   case "$cmd" in
     push) cmd_push "$@" ;;
+    pull) cmd_pull "$@" ;;
     show) cmd_show "$@" ;;
     -h | --help | help) usage ;;
     *)
