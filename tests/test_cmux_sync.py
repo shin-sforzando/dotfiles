@@ -60,7 +60,10 @@ elif args[:2] == ["workspace-group", "create"]:
 
 FAKE_GHQ = r"""#!/bin/sh
 case "$1" in
-  root) printf '%s\n' "$FAKE_GHQ_ROOT" ;;
+  root)
+    [ -n "$FAKE_GHQ_ROOT_FAIL" ] && exit 1
+    printf '%s\n' "$FAKE_GHQ_ROOT"
+    ;;
   get)
     printf '%s\n' "$2" >>"$FAKE_GHQ_CALLS"
     for fail in $FAKE_GHQ_FAIL; do [ "$2" = "$fail" ] && exit 1; done
@@ -404,6 +407,23 @@ class PushTest(CmuxSyncTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("2 windows have workspaces", result.stderr)
 
+    def test_push_writes_nothing_when_ghq_fails(self) -> None:
+        """A failing ghq root aborts push instead of recording junk repo slugs."""
+        repo = self.ghq_root / "github.com" / "o" / "r"
+        repo.mkdir(parents=True)
+        self.set_cmux_state(list=[workspace(0, str(repo))])
+        result = self.run_sync("push", env={"FAKE_GHQ_ROOT_FAIL": "1"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("nothing was pushed", result.stderr)
+        self.assertFalse((self.sync_dir / "snapshot.json").exists())
+
+    def test_push_writes_nothing_when_cmux_fails(self) -> None:
+        """A failing cmux tree aborts push instead of being read as zero windows."""
+        self.set_cmux_state(list=[workspace(0, str(self.home))], fail_on=["tree"])
+        result = self.run_sync("push")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.sync_dir / "snapshot.json").exists())
+
     def test_push_notifies_the_result(self) -> None:
         """Push reports through cmux notify, since a palette run closes its tab."""
         self.set_cmux_state(list=[workspace(0, str(self.home))])
@@ -505,6 +525,21 @@ class PullTest(CmuxSyncTestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("refusing to close everything", result.stderr)
         self.assertEqual(self.mutating_calls(), [])
+
+    def test_pull_prompt_shows_how_old_the_snapshot_is(self) -> None:
+        """The confirmation names the origin and age so a stale snapshot stands out."""
+        self.write_snapshot(make_snapshot([{"cwd": "~"}]))
+        result = self.run_sync("pull", stdin="n\n")
+        self.assertRegex(result.stdout, r"saved on MacStudio \d+ min ago")
+        self.assertIn("continue? [y/N]", result.stdout)
+
+    def test_pull_from_missing_file_names_the_file(self) -> None:
+        """A mistyped --from path is reported as such, not as a missing push."""
+        missing = self.tmp / "nope.json"
+        result = self.run_sync("pull", "--from", str(missing))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"no such file: {missing}", result.stderr)
+        self.assertNotIn("cmux-sync push", result.stderr)
 
     def test_pull_stops_when_answer_is_not_yes(self) -> None:
         """Without --yes, anything but y leaves cmux untouched."""

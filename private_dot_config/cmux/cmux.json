@@ -18,9 +18,8 @@
       "title": "Workspace Sync: Pull",
       "description": "Replace this Mac's workspaces with the saved layout",
       "keywords": ["sync", "pull", "cmux-sync"],
-      "command": "cmux-sync pull --yes",
-      "target": "newTabInCurrentPane",
-      "confirm": true
+      "command": "cmux-sync pull",
+      "target": "newTabInCurrentPane"
     }
   }
 }

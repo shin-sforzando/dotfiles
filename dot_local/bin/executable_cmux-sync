@@ -92,7 +92,11 @@ ensure_local() {
   local file=$1 placeholder waited=0
   [ -f "$file" ] && return 0
   placeholder="$(dirname "$file")/.$(basename "$file").icloud"
-  [ -f "$placeholder" ] || die "no snapshot at $file; run 'cmux-sync push' on the other Mac first"
+  if [ ! -f "$placeholder" ]; then
+    # Only the default snapshot comes from a push; any other path is the user's own file
+    [ "$file" = "$SNAPSHOT" ] || die "no such file: $file"
+    die "no snapshot at $file; run 'cmux-sync push' on the other Mac first"
+  fi
   brctl download "$file" >/dev/null 2>&1 || true
   while [ ! -f "$file" ]; do
     [ "$waited" -lt "$DOWNLOAD_TIMEOUT" ] || die "iCloud did not download $file within ${DOWNLOAD_TIMEOUT}s"
@@ -122,11 +126,14 @@ repo_of() {
 
 build_snapshot() {
   local root ws groups windows remote_count repos='{}' dir repo
-  root=$(ghq root)
-  ws=$(cmux workspace list --json)
-  groups=$(cmux workspace-group list --json)
+  # bash 3.2 has no inherit_errexit, so callers that capture this function with
+  # $(...) never stop on a failing command inside it; every external read returns
+  # explicitly instead, or a dead ghq turns every path into a bogus repo slug
+  root=$(ghq root) || return 1
+  ws=$(cmux workspace list --json) || return 1
+  groups=$(cmux workspace-group list --json) || return 1
 
-  windows=$(cmux tree --json | jq '[.windows[] | select(.workspace_count > 0)] | length')
+  windows=$(cmux tree --json | jq '[.windows[] | select(.workspace_count > 0)] | length') || return 1
   [ "$windows" -le 1 ] || warn "$windows windows have workspaces; only the current window is captured"
   remote_count=$(jq "$JQ_DEFS"'[ws_items[] | select(.remote.enabled // false)] | length' <<<"$ws")
   [ "$remote_count" -eq 0 ] || warn "skipping $remote_count remote workspace(s); SSH and cloud VM sessions cannot be recreated"
@@ -177,7 +184,7 @@ build_snapshot() {
 
 cmd_push() {
   local snapshot tmp summary
-  snapshot=$(build_snapshot)
+  snapshot=$(build_snapshot) || die "could not read the current layout from cmux or ghq; nothing was pushed"
   mkdir -p "$SYNC_DIR"
   # Rename into place so iCloud never uploads a half-written snapshot
   tmp="$SYNC_DIR/.snapshot.json.tmp.$$"
@@ -384,7 +391,9 @@ cmd_pull() {
 
   root=$(ghq root)
   resolve_dirs "$snap" "$root"
-  jq -r '"pull \(.workspaces | length) workspaces and \(.groups | length) groups saved on \(.host) at \(.createdAt)"' <<<"$snap"
+  # Age rather than a timestamp, so a snapshot left over from days ago stands out
+  jq -r '((now - (.createdAt | fromdateiso8601)) / 60 | floor) as $age
+    | "pull \(.workspaces | length) workspaces and \(.groups | length) groups saved on \(.host) \($age) min ago"' <<<"$snap"
   if [ "$dry_run" -eq 1 ]; then
     print_plan "$snap" "$root"
     return 0
