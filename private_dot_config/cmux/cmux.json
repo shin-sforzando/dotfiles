@@ -4,19 +4,23 @@
   "sleepyMode": {
     "mascot": "cmux"
   },
-  "commands": [
-    {
-      "name": "Workspace Sync: Push",
+  "actions": {
+    "workspaceSync.push": {
+      "type": "command",
+      "title": "Workspace Sync: Push",
       "description": "Save this Mac's workspace layout to iCloud Drive",
       "keywords": ["sync", "push", "cmux-sync"],
-      "command": "cmux-sync push"
+      "command": "cmux-sync push && exit",
+      "target": "newTabInCurrentPane"
     },
-    {
-      "name": "Workspace Sync: Pull",
+    "workspaceSync.pull": {
+      "type": "command",
+      "title": "Workspace Sync: Pull",
       "description": "Replace this Mac's workspaces with the saved layout",
       "keywords": ["sync", "pull", "cmux-sync"],
       "command": "cmux-sync pull --yes",
+      "target": "newTabInCurrentPane",
       "confirm": true
     }
-  ]
+  }
 }

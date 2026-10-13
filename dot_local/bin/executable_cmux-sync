@@ -176,14 +176,17 @@ build_snapshot() {
 }
 
 cmd_push() {
-  local snapshot tmp
+  local snapshot tmp summary
   snapshot=$(build_snapshot)
   mkdir -p "$SYNC_DIR"
   # Rename into place so iCloud never uploads a half-written snapshot
   tmp="$SYNC_DIR/.snapshot.json.tmp.$$"
   printf '%s\n' "$snapshot" >"$tmp"
   mv "$tmp" "$SNAPSHOT"
-  jq -r '"pushed \(.workspaces | length) workspaces and \(.groups | length) groups from \(.host)"' <<<"$snapshot"
+  summary=$(jq -r '"pushed \(.workspaces | length) workspaces and \(.groups | length) groups from \(.host)"' <<<"$snapshot")
+  printf '%s\n' "$summary"
+  # The palette action closes its tab on success, so the terminal output is never seen
+  notify "cmux-sync push" "$summary"
 }
 
 # Decides where each snapshot workspace opens on this Mac. Fills DIRS (left empty

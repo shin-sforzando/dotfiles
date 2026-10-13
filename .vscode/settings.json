@@ -12,6 +12,7 @@
       "Aquilina",
       "archiver",
       "archlinux",
+      "argjson",
       "armhf",
       "Artix",
       "atuin",
@@ -30,6 +31,7 @@
       "bootc",
       "bootout",
       "borderless",
+      "brctl",
       "Brinno",
       "catppuccin",
       "Cblue",
@@ -95,11 +97,13 @@
       "Flipples",
       "folke",
       "FPATH",
+      "fromdateiso",
       "frontmatter",
       "fseventsd",
       "ftrue",
       "fulltext",
       "garuda",
+      "gcount",
       "genact",
       "genshingothic",
       "ghostty",
@@ -347,6 +351,10 @@
       "zprof",
       "zxgrep"
     ],
-    "snyk.advanced.organization": "ff2f8893-cd9c-4a6a-be9a-4e081966d881",
-    "snyk.advanced.autoSelectOrganization": true
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#3E4B5E",
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveBackground": "#3E4B5E",
+    "titleBar.inactiveForeground": "#FFFFFF"
+  }
 }

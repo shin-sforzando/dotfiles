@@ -404,6 +404,15 @@ class PushTest(CmuxSyncTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("2 windows have workspaces", result.stderr)
 
+    def test_push_notifies_the_result(self) -> None:
+        """Push reports through cmux notify, since a palette run closes its tab."""
+        self.set_cmux_state(list=[workspace(0, str(self.home))])
+        result = self.run_sync("push")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        notices = [c for c in self.cmux_calls() if c[:1] == ["notify"]]
+        self.assertEqual(len(notices), 1)
+        self.assertIn("pushed 1 workspaces and 0 groups from TestMac", notices[0])
+
     def test_push_keeps_workspace_without_directory(self) -> None:
         """A workspace with no reported directory is stored with a null cwd."""
         self.set_cmux_state(list=[workspace(0, None), workspace(1, str(self.home))])
