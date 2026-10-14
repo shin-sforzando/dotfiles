@@ -1,0 +1,18 @@
+#       Serial: 15287029, Slot: 1
+#         Name: fnox-home
+#      Created: Wed, 14 Oct 2026 17:38:32 +0000
+#   PIN policy: Once   (A PIN is required once per session, if set)
+# Touch policy: Never  (A physical touch is NOT required to decrypt)
+#    Recipient: age1yubikey1q0gjjc8xksnglx59vw0w5en5utnhlwrwqgr55esuwstg3kvqd35vwrjhc4t
+AGE-PLUGIN-YUBIKEY-174PWJQYZT06NS7CJ0K0FQ
+
+
+#       Serial: 15287028, Slot: 1
+#         Name: fnox-mobile
+#      Created: Wed, 14 Oct 2026 17:45:54 +0000
+#   PIN policy: Once   (A PIN is required once per session, if set)
+# Touch policy: Never  (A physical touch is NOT required to decrypt)
+#    Recipient: age1yubikey1q2fqjdtmddqz3kvvutxnvxj7nn2wmqeyg5xpd7vk9wafvwf23c9hz5satfr
+AGE-PLUGIN-YUBIKEY-173PWJQYZVN9TYZG3R3GRL
+
+

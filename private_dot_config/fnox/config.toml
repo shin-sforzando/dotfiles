@@ -1,0 +1,14 @@
+# Global fnox config: every project inherits this age provider, so a project's
+# fnox.toml only needs [secrets].
+[providers.age]
+type = "age"
+# Encrypt to all three so either YubiKey alone, or the 1Password backup when both
+# are lost, can decrypt. Adding or removing one requires `fnox reencrypt -p age`.
+recipients = [
+  "age1yubikey1q0gjjc8xksnglx59vw0w5en5utnhlwrwqgr55esuwstg3kvqd35vwrjhc4t", # fnox-home   (YubiKey 5C NFC, serial 15287029)
+  "age1yubikey1q2fqjdtmddqz3kvvutxnvxj7nn2wmqeyg5xpd7vk9wafvwf23c9hz5satfr", # fnox-mobile (YubiKey 5C NFC, serial 15287028)
+  "age19sm9kng48dxfkytnxmsseljw23g946m87sj9vkxchfz2fh2889vq86j0sv",          # backup: op://Employee/fnox age backup key/identity
+]
+# Decryption falls back to ~/.config/fnox/age.txt, which holds only the YubiKey
+# stubs. The backup secret stays in 1Password and is supplied on demand via
+# FNOX_AGE_KEY="$(op read ...)" so it never lands on disk.

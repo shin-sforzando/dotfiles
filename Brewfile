@@ -3,6 +3,12 @@ tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 tap "satococoa/tap"
 
 ## Install Packages
+# Simple, modern file encryption; age-keygen creates the 1Password-held backup recipient for fnox
+brew "age"
+
+# YubiKey PIV plugin for age; fnox's age provider spawns it from PATH to encrypt and decrypt
+brew "age-plugin-yubikey"
+
 # The magical shell history
 brew "atuin"
 
@@ -57,6 +63,9 @@ brew "fd"
 
 # Play, record, convert, and stream audio and video
 brew "ffmpeg"
+
+# Encrypted secrets in git, decrypted with YubiKey-backed age keys; https://fnox.jdx.dev
+brew "fnox"
 
 # A command-line fuzzy finder
 brew "fzf"
