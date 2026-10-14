@@ -16,15 +16,15 @@ pre-commit:
 
     # Format shell scripts to the .editorconfig 2-space style; .sh.tmpl is excluded by the *.sh glob.
     # -ci keeps case bodies indented (matches the existing scripts; shfmt flattens them by default).
-    # executable_cmux-sync has no extension because chezmoi deploys it as a command name
+    # executable_cmux-sync and executable_crit-open have no extension because chezmoi deploys them as command names
     shfmt:
-      glob: "{*.sh,dot_local/bin/executable_cmux-sync}"
+      glob: "{*.sh,dot_local/bin/executable_cmux-sync,dot_local/bin/executable_crit-open}"
       run: shfmt -i 2 -ci -w {staged_files}
       stage_fixed: true
 
     # Static analysis for plain scripts; any finding (including info level) fails the commit
     shellcheck:
-      glob: "{*.sh,dot_local/bin/executable_cmux-sync}"
+      glob: "{*.sh,dot_local/bin/executable_cmux-sync,dot_local/bin/executable_crit-open}"
       run: shellcheck {staged_files}
 
     # Most scripts are templates, which shellcheck cannot parse raw, so lint them as rendered
