@@ -1,0 +1,23 @@
+#!/bin/bash
+# crit-open: crit's open_cmd. Opens a review URL in a cmux browser split next to the
+# agent that started the review, instead of the macOS default browser.
+#
+# crit passes the URL as the only argument and accepts no flags in open_cmd, which is
+# why this wrapper exists at all.
+
+set -euo pipefail
+
+url="${1:?usage: crit-open <url>}"
+
+# CMUX_WORKSPACE_ID is only set inside a cmux terminal; outside cmux (plain Ghostty,
+# SSH) there is no workspace to split, so the default browser is the right target.
+# ping guards against a stale variable inherited after cmux quit.
+if [ -n "${CMUX_WORKSPACE_ID:-}" ] && command -v cmux >/dev/null 2>&1 \
+  && cmux ping >/dev/null 2>&1; then
+  # A failed split must not lose the review link, so fall through to open(1)
+  if cmux browser open "$url" --focus true >/dev/null 2>&1; then
+    exit 0
+  fi
+fi
+
+exec open "$url"
