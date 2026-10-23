@@ -7,7 +7,9 @@ font-family = "Menlo"
 font-size = 14
 font-thicken = true
 window-title-font-family = "UDEV Gothic NF"
-macos-titlebar-style = tabs
+# Pinned to the default on purpose: `tabs` reparents the native tab bar into
+# the titlebar and broke on macOS 27 (Ghostty 1.3.1). Revisit once fixed upstream.
+macos-titlebar-style = transparent
 macos-option-as-alt = left
 
 clipboard-read = allow
