@@ -14,8 +14,8 @@ set -eufo pipefail
 # Homebrew's libvips (pulled in by netlify-cli) makes sharp skip its prebuilt
 # binary and attempt a source build that fails without node-gyp.
 echo "📦 Installing AgentDeck bridge..."
-mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@1.9.0
-# bridge 1.9.0 lands its bin target without the exec bit, and both the CLI call
+mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@1.9.6
+# The published bridge lands its bin target without the exec bit, and both the CLI call
 # below and the LaunchAgent exec that file directly.
 chmod +x "$(mise exec node@lts -- npm root --global)/@agentdeck/bridge/dist/cli.js"
 
@@ -25,8 +25,11 @@ chmod +x "$(mise exec node@lts -- npm root --global)/@agentdeck/bridge/dist/cli.
 # mDNS/UDP beacon, LAN sweep and BLE scans the default posture enables.
 # Codex and OpenCode are not used here, yet daemon install would hook into any
 # ~/.codex/config.toml and write an OpenCode plugin unconditionally.
+# AGENTDECK_STATUSLINE=0: daemon install otherwise wraps the chezmoi-managed
+# statusLine in a relay, which drifts settings.json and probes Group Containers
+# on every render (a TCC hang under Tailscale SSH).
 echo "🔄 Registering AgentDeck daemon LaunchAgent..."
 mise exec node@lts -- env AGENTDECK_NO_CODEX_HOOKS=1 AGENTDECK_NO_OPENCODE_HOOKS=1 \
-  agentdeck daemon install --loopback
+  AGENTDECK_STATUSLINE=0 agentdeck daemon install --loopback
 echo "✅ AgentDeck daemon installed"
 {{- end }}
