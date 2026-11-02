@@ -7,14 +7,14 @@
 set -eufo pipefail
 
 # Only the daemon is host-limited. The Claude Code hooks stay in the shared
-# ~/.claude/settings.json on every Mac: without a daemon they fail fast on a
-# refused loopback connection, which is cheaper than templating that file.
+# ~/.claude/settings.json on every Mac: without a healthy daemon.json entry they
+# exit before sending anything, which is cheaper than templating that file.
 # The Ulanzi Studio plugin itself comes from the Ulanzi Marketplace by hand.
 
 # Homebrew's libvips (pulled in by netlify-cli) makes sharp skip its prebuilt
 # binary and attempt a source build that fails without node-gyp.
 echo "📦 Installing AgentDeck bridge..."
-mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@1.9.6
+mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@2.0.0
 # The published bridge lands its bin target without the exec bit, and both the CLI call
 # below and the LaunchAgent exec that file directly.
 chmod +x "$(mise exec node@lts -- npm root --global)/@agentdeck/bridge/dist/cli.js"

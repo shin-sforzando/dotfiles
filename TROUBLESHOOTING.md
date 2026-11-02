@@ -925,7 +925,7 @@ Claude Code の状態を Ulanzi D200X のキーに出す。構成は 3 つで、
 
 設計の理由:
 
-- フックはデーモンが無いと `127.0.0.1:9120` への接続が即座に拒否されて終わるので、`settings.json` をテンプレート化せず全 Mac に置いている。
+- フックは `daemon.json` に `/health` が応答するデーモンが見つからなければ何も送らずに終了する（2.0.0 で `9120` への暗黙のフォールバックは廃止）ので、`settings.json` をテンプレート化せず全 Mac に置いている。
 - フックの中身は `@agentdeck/setup` が生成するものと同一にしてある。`agentdeck daemon install` は同じ内容で書き直すだけなので、chezmoi の source とずれない。
 - デーモンは `--loopback` で入れる。プラグインは同じ Mac から繋ぐだけなので、mDNS・LAN スキャン・BLE は使わない。
 - スクリプトは `AGENTDECK_NO_CODEX_HOOKS=1` と `AGENTDECK_NO_OPENCODE_HOOKS=1` を付けて `daemon install` を実行する。付けないと `~/.codex/config.toml` と `~/.config/opencode/plugins/agentdeck.js` に書き込まれる。
