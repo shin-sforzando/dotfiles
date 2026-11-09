@@ -14,7 +14,7 @@ set -eufo pipefail
 # Homebrew's libvips (pulled in by netlify-cli) makes sharp skip its prebuilt
 # binary and attempt a source build that fails without node-gyp.
 echo "📦 Installing AgentDeck bridge..."
-mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@2.0.0
+mise exec node@lts -- env SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --global @agentdeck/bridge@2.1.1
 # The published bridge lands its bin target without the exec bit, and both the CLI call
 # below and the LaunchAgent exec that file directly.
 chmod +x "$(mise exec node@lts -- npm root --global)/@agentdeck/bridge/dist/cli.js"
