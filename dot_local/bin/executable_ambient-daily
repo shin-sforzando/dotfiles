@@ -58,6 +58,17 @@ class Config:
     def daily_dir(self) -> Path:
         return self.vault / "Daily"
 
+    def note_path(self, date: dt.date) -> Path:
+        # Month folders keep Daily/ browsable; Obsidian's daily-notes format
+        # must be "YYYY-MM/YYYY-MM-DD" too, or it creates flat duplicates.
+        return self.daily_dir / f"{date:%Y-%m}" / f"{date.isoformat()}.md"
+
+    def current_note(self, date: dt.date) -> Path:
+        """Where the note lives now: its month folder, or the old flat layout."""
+        path = self.note_path(date)
+        legacy = self.daily_dir / f"{date.isoformat()}.md"
+        return legacy if not path.exists() and legacy.exists() else path
+
 
 def load_config() -> Config:
     env = os.environ.get
@@ -662,23 +673,30 @@ def compose(existing: str | None, date: dt.date, section: list[str], tags: list[
 
 
 def write_note(cfg: Config, date: dt.date, section: list[str], tags: list[str], dry_run: bool = False) -> bool:
-    path = cfg.daily_dir / f"{date.isoformat()}.md"
-    existing = path.read_text(encoding="utf-8") if path.exists() else None
+    path = cfg.note_path(date)
+    source = cfg.current_note(date)
+    existing = source.read_text(encoding="utf-8") if source.exists() else None
     now = dt.datetime.now().astimezone().isoformat(sep=" ", timespec="seconds")
     # Compare without bumping `modified` first, so an unchanged note is not
     # touched at all (no iCloud upload, no Obsidian reload).
-    if existing is not None and compose(existing, date, section, tags, now, touch=False) == existing:
+    if source == path and existing is not None and compose(existing, date, section, tags, now, touch=False) == existing:
         return False
     content = compose(existing, date, section, tags, now, touch=True)
     if dry_run:
         sys.stdout.write(content)
         return True
+    path.parent.mkdir(exist_ok=True)
     fd, temp = tempfile.mkstemp(dir=path.parent, prefix=".ambient-daily.")
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(content)
-    os.chmod(temp, 0o644 if existing is None else path.stat().st_mode & 0o777)
+    os.chmod(temp, 0o644 if existing is None else source.stat().st_mode & 0o777)
     # Rename within the folder so Obsidian and iCloud never see a half-written note.
     os.replace(temp, path)
+    if source != path:
+        # A flat note left by the old layout (or an Obsidian device still on the
+        # old format) moves into its month folder instead of becoming a twin.
+        source.unlink()
+        log(f"{date}: moved {source.name} into {path.parent.name}/")
     return True
 
 
@@ -716,8 +734,8 @@ def process_day(cfg: Config, date: dt.date, force: bool = False, dry_run: bool =
     kb_text = read_kb(cfg.ac_root / "KB" / date.isoformat())
     template = cfg.prompt_file.read_text(encoding="utf-8")
     digest = input_hash(template, blocks, kb_text)
-    path = cfg.daily_dir / f"{date.isoformat()}.md"
-    if not force and path.exists():
+    path = cfg.current_note(date)
+    if not force and path == cfg.note_path(date) and path.exists():
         _, body = split_frontmatter(path.read_text(encoding="utf-8"))
         if old_meta(body)[0] == digest:
             return "skipped"
@@ -737,7 +755,7 @@ def process_day(cfg: Config, date: dt.date, force: bool = False, dry_run: bool =
         log(f"{date}: {path}: {err}; left untouched")
         return "failed"
     if changed:
-        log(f"{date}: {'would write' if dry_run else 'wrote'} {path}")
+        log(f"{date}: {'would write' if dry_run else 'wrote'} {cfg.note_path(date)}")
     return "generated" if changed else "skipped"
 
 

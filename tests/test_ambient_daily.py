@@ -521,7 +521,7 @@ class WriteTest(unittest.TestCase):
         self.cfg = make_config(self.root)
         self.cfg.daily_dir.mkdir(parents=True)
         self.date = dt.date(2026, 10, 1)
-        self.path = self.cfg.daily_dir / "2026-10-01.md"
+        self.path = self.cfg.daily_dir / "2026-10" / "2026-10-01.md"
         self.note = ad.normalize(PAYLOAD, ad.parse_timeline(APPS_MD), Counter())
         self.section = ad.render_section(self.note, "0123456789abcdef")
 
@@ -571,7 +571,23 @@ class WriteTest(unittest.TestCase):
         before = self.path.read_text(encoding="utf-8")
         self.assertFalse(ad.write_note(self.cfg, self.date, self.section, ["flipples"]))
         self.assertEqual(self.path.read_text(encoding="utf-8"), before)
-        self.assertEqual([p.name for p in self.cfg.daily_dir.iterdir()], ["2026-10-01.md"])
+        self.assertEqual([p.name for p in self.path.parent.iterdir()], ["2026-10-01.md"])
+
+    def test_flat_legacy_note_moves_into_month_folder(self):
+        legacy = self.cfg.daily_dir / "2026-10-01.md"
+        legacy.write_text(LEGACY_NOTE, encoding="utf-8")
+        self.assertTrue(ad.write_note(self.cfg, self.date, self.section, ["flipples"]))
+        self.assertFalse(legacy.exists())
+        self.assertIn("朝のメモ。", self.path.read_text(encoding="utf-8"))
+
+    def test_dry_run_leaves_flat_legacy_note_in_place(self):
+        legacy = self.cfg.daily_dir / "2026-10-01.md"
+        legacy.write_text(LEGACY_NOTE, encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            ad.write_note(self.cfg, self.date, self.section, ["flipples"], dry_run=True)
+        self.assertTrue(legacy.exists())
+        self.assertFalse(self.path.exists())
+        self.assertIn("朝のメモ。", out.getvalue())
 
     def test_dry_run_writes_nothing(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:
@@ -586,7 +602,9 @@ class WriteTest(unittest.TestCase):
         legacy.write_text(LEGACY_NOTE.replace("2026-10-01", "2026-10-02"), encoding="utf-8")
         ad.write_note(self.cfg, dt.date(2026, 10, 2), self.section, ["flipples"])
         (self.cfg.vault / ".markdownlint-cli2.jsonc").write_text('{"config":{"MD013":false}}', encoding="utf-8")
-        result = subprocess.run(["markdownlint-cli2", "Daily/*.md"], cwd=self.cfg.vault, capture_output=True, text=True)
+        result = subprocess.run(
+            ["markdownlint-cli2", "Daily/**/*.md"], cwd=self.cfg.vault, capture_output=True, text=True
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
@@ -638,13 +656,13 @@ class PipelineTest(unittest.TestCase):
         apps.parent.mkdir(parents=True)
         apps.write_text(APPS_MD, encoding="utf-8")
         self.assertEqual(ad.process_day(self.cfg, date), "failed")
-        self.assertFalse((self.cfg.daily_dir / "2026-09-30.md").exists())
+        self.assertFalse(self.cfg.note_path(date).exists())
         self.assertEqual(self.fake.calls(), [])
 
     def test_claude_failure_leaves_the_note_alone(self):
         os.environ["FAKE_CLAUDE_MODE"] = "error"
         self.assertEqual(ad.process_day(self.cfg, dt.date(2026, 10, 5)), "failed")
-        self.assertFalse((self.cfg.daily_dir / "2026-10-05.md").exists())
+        self.assertFalse(self.cfg.note_path(dt.date(2026, 10, 5)).exists())
 
     def test_main_logs_summary_and_returns_failure_code(self):
         self.assertEqual(ad.main([], cfg=self.cfg, today=self.today), 0)
