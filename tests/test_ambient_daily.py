@@ -295,7 +295,7 @@ class VaultTest(unittest.TestCase):
     def test_vocabulary_counts_frontmatter_and_inline_tags(self):
         self.note("Magic/a.md", "---\ntags:\n  - Magic\n---\n\nbody #python\n")
         self.note("Magic/b.md", "---\ntags: [magic]\n---\n\n```\n#fenced\n```\n#ff6b6b\n")
-        tags, titles = ad.vault_vocabulary(self.vault)
+        tags, titles, _ = ad.vault_vocabulary(self.vault)
         self.assertEqual(tags["magic"], 2)
         self.assertEqual(tags["python"], 1)
         self.assertNotIn("fenced", tags)
@@ -307,7 +307,7 @@ class VaultTest(unittest.TestCase):
         self.note("Templates/for Templater/default.md", "x")
         self.note(".obsidian/plugins/x.md", "x")
         self.note("Hacking Papa/Flipples.md", "x")
-        _, titles = ad.vault_vocabulary(self.vault)
+        _, titles, _ = ad.vault_vocabulary(self.vault)
         self.assertEqual(titles, ["Flipples"])
 
 
@@ -410,7 +410,7 @@ class NormalizeTest(unittest.TestCase):
 
     def test_clean_text(self):
         self.assertEqual(ad.clean_text("a\n  **b**  *c*"), "a b c")
-        self.assertEqual(ad.clean_text("PR #1082 と #tag"), "PR \\#1082 と \\#tag")
+        self.assertEqual(ad.clean_text("PR #1082 と #tag"), "PR #1082 と \\#tag")
         self.assertEqual(ad.clean_text("見た https://e.com/x。"), "見た <https://e.com/x>。")
         self.assertEqual(ad.clean_text("[x](https://e.com) <https://e.org>"), "[x](https://e.com) <https://e.org>")
         self.assertEqual(ad.clean_text("[[Flipples]] と [[壊れ"), "Flipples と 壊れ")
@@ -426,7 +426,7 @@ class NormalizeTest(unittest.TestCase):
         raw["outcomes"] = PAYLOAD["outcomes"] + [{"text": "時刻なし", "range": "いつか"}]
         note = ad.normalize(raw, self.blocks, Counter())
         self.assertEqual(note.narrative, [("午後はFlipplesの定例で日程を詰めた", "13:04-15:16")])
-        self.assertEqual(note.outcomes, [("[[Flipples]] 第2弾のスケジュールを確定 \\#1082", "13:04-15:16")])
+        self.assertEqual(note.outcomes, [("[[Flipples]] 第2弾のスケジュールを確定 #1082", "13:04-15:16")])
         self.assertEqual(note.time_use, [("13:04-15:16", "Flipples 定例", ["Wavebox"])])
         self.assertEqual(note.open, [("Brinno動画消失の原因調査", "15:20-15:25")])
         self.assertEqual(note.tags, ["flipples", "video"])
@@ -451,7 +451,7 @@ EXPECTED_SECTION = """<!-- ambient-context:start -->
 
 ### 成果
 
-- [[Flipples]] 第2弾のスケジュールを確定 \\#1082 13:04-15:16
+- [[Flipples]] 第2弾のスケジュールを確定 #1082 13:04-15:16
 
 ### 未完了
 
@@ -606,6 +606,140 @@ class WriteTest(unittest.TestCase):
             ["markdownlint-cli2", "Daily/**/*.md"], cwd=self.cfg.vault, capture_output=True, text=True
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+GLOSSARY_MD = """# glossary
+
+## Guidance
+
+- 敬称は「さん」。
+
+## Replace
+
+- `サーバ` → `サーバー`
+- `モニタ` → `モニター`
+- `sforzando` → `Sforzando`
+- `Mtg` → `打ち合わせ`
+
+## Tag synonyms
+
+- `claude-ai` → `claude`
+
+## Redundant tags
+
+- `git` with `github`
+
+## No link
+
+- `List`
+"""
+
+NAMES = {
+    "Flipples": "Flipples",
+    "思い出レンジ": "思い出レンジ",
+    "memory-oven": "思い出レンジ",
+    "AgentDeck": "AgentDeck",
+    "List": "List",
+    "2025": "2025",
+}
+
+SOURCE = """## 10:00–10:05 · Vivaldi · Issue #675 · puritysb/AgentDeck
+url: https://github.com/sforzando/flipples-jp/pull/1082
+## 10:05–10:06 · Wavebox · Re: [sforzando/flipples-jp] fix: 503 (Issue #965)
+"""
+
+
+class LinkAndWordingTest(unittest.TestCase):
+    def setUp(self):
+        self.glossary = ad.parse_glossary(GLOSSARY_MD)
+        self.polish = ad.make_polish(NAMES, self.glossary, SOURCE)
+
+    def polished(self, text: str) -> str:
+        return ad.polish_text(ad.clean_text(text), self.polish)
+
+    def test_parse_glossary(self):
+        self.assertIn(("サーバ", "サーバー"), self.glossary.replace)
+        self.assertEqual(self.glossary.tag_synonyms, {"claude-ai": "claude"})
+        self.assertEqual(self.glossary.redundant_tags, [("git", "github")])
+        self.assertEqual(self.glossary.no_link, {"List"})
+        self.assertIn("敬称", self.glossary.text)
+
+    def test_vocabulary_maps_aliases_and_drops_shared_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            for rel, text in {
+                "Hacking Papa/思い出レンジ.md": "---\naliases:\n  - memory-oven\n---\n",
+                "AOTAKE/2024/選考会.md": "x",
+                "AOTAKE/2025/選考会.md": "x",
+                "Daily/2026-10/2026-10-01.md": "x",
+            }.items():
+                (vault / rel).parent.mkdir(parents=True, exist_ok=True)
+                (vault / rel).write_text(text, encoding="utf-8")
+            _, titles, names = ad.vault_vocabulary(vault)
+        self.assertEqual(names, {"思い出レンジ": "思い出レンジ", "memory-oven": "思い出レンジ"})
+        self.assertEqual(titles, ["思い出レンジ", "選考会"])
+
+    def test_prompt_lists_aliases_and_glossary(self):
+        prompt = ad.build_prompt(
+            "{{NOTES}}|{{GLOSSARY}}", dt.date(2026, 10, 5), [], "", Counter(), ["思い出レンジ"], NAMES, "G"
+        )
+        self.assertEqual(prompt, "思い出レンジ (aliases: memory-oven)|G")
+
+    def test_input_hash_follows_glossary(self):
+        self.assertNotEqual(ad.input_hash("t", [], "kb", "a"), ad.input_hash("t", [], "kb", "b"))
+
+    def test_existing_wikilinks_are_resolved_or_unwrapped(self):
+        self.assertEqual(self.polished("[[memory-oven]]の設計"), "[[思い出レンジ|memory-oven]]の設計")
+        self.assertEqual(self.polished("[[Dropbox]]のプラン"), "Dropboxのプラン")
+        self.assertEqual(self.polished("[[Flipples|フリップルズ]]"), "[[Flipples|フリップルズ]]")
+        self.assertEqual(self.polished("[[2026-10-23]]に注文"), "[[2026-10-23]]に注文")
+
+    def test_mentions_are_linked_as_whole_words(self):
+        self.assertEqual(self.polished("Flipplesの定例"), "[[Flipples]]の定例")
+        self.assertEqual(self.polished("思い出レンジとmemory-oven"), "[[思い出レンジ]]と[[思い出レンジ|memory-oven]]")
+        self.assertEqual(self.polished("flipples-jpとFlipples-jp"), "flipples-jpとFlipples-jp")
+        self.assertEqual(self.polished("[[Flipples]]とFlipples"), "[[Flipples]]と[[Flipples]]")
+        self.assertEqual(self.polished("Listと2025年"), "Listと2025年")
+        self.assertEqual(self.polished("見た https://e.com/Flipples"), "見た <https://e.com/Flipples>")
+
+    def test_github_references_are_linked_when_the_repo_is_known(self):
+        self.assertEqual(
+            self.polished("PR#1082をマージ"), "[PR #1082](https://github.com/sforzando/flipples-jp/pull/1082)をマージ"
+        )
+        self.assertEqual(
+            self.polished("issue \\#965が再発"),
+            "[Issue #965](https://github.com/sforzando/flipples-jp/issues/965)が再発",
+        )
+        self.assertEqual(
+            self.polished("Issue #675・#999"), "[Issue #675](https://github.com/puritysb/AgentDeck/issues/675)・#999"
+        )
+        self.assertEqual(
+            self.polished("Issue puritysb/AgentDeck#544"),
+            "[Issue #544](https://github.com/puritysb/AgentDeck/issues/544)",
+        )
+        self.assertEqual(self.polished("PR invented/repo#7を確認"), "PR #7を確認")
+        self.assertEqual(self.polished("approve #8"), "approve #8")
+        self.assertEqual(self.polished("#tag"), "\\#tag")
+
+    def test_ambiguous_issue_numbers_stay_plain(self):
+        polish = ad.make_polish({}, ad.Glossary(), SOURCE + "github.com/other/repo/issues/1082\n")
+        self.assertEqual(ad.polish_text("PR #1082", polish), "PR #1082")
+
+    def test_glossary_replaces_whole_words_only(self):
+        self.assertEqual(self.polished("MCPサーバ接続とサーバー"), "MCPサーバー接続とサーバー")
+        self.assertEqual(self.polished("LGモニタとモニタリング"), "LGモニターとモニタリング")
+        self.assertEqual(self.polished("sforzando社とsforzando/flipples-jp"), "Sforzando社とsforzando/flipples-jp")
+        self.assertEqual(self.polished("緊急Mtg"), "緊急打ち合わせ")
+
+    def test_tags_follow_synonyms_and_redundancy(self):
+        tags = ad.normalize_tags(["claude-ai", "git", "github", "claude"], Counter(), self.glossary)
+        self.assertEqual(tags, ["claude", "github"])
+
+    def test_normalize_polishes_every_text_but_not_apps(self):
+        raw = dict(PAYLOAD, time_use=[{"range": "13:04-15:16", "label": "Flipples Mtg", "apps": ["Flipples"]}])
+        note = ad.normalize(raw, ad.parse_timeline(APPS_MD), Counter(), self.polish)
+        self.assertEqual(note.time_use, [("13:04-15:16", "[[Flipples]] 打ち合わせ", ["Flipples"])])
+        self.assertEqual(note.narrative, [("午後は[[Flipples]]の定例で日程を詰めた", "13:04-15:16")])
 
 
 class PipelineTest(unittest.TestCase):

@@ -29,7 +29,7 @@ import tempfile
 import time
 from collections import Counter
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 HOME = Path.home()
@@ -53,6 +53,13 @@ class Config:
     window_days: int = 7
     lock_file: Path = HOME / ".local/state/ambient-daily.lock"
     notify: bool = True
+    glossary_file: Path | None = None
+
+    @property
+    def glossary_path(self) -> Path:
+        # Lives next to the prompt by default: both are the user's wording
+        # decisions and are deployed together.
+        return self.glossary_file or self.prompt_file.parent / "glossary.md"
 
     @property
     def daily_dir(self) -> Path:
@@ -85,6 +92,7 @@ def load_config() -> Config:
         claude=env("AMBIENT_DAILY_CLAUDE", "/opt/homebrew/bin/claude"),
         model=env("AMBIENT_DAILY_MODEL", "claude-sonnet-5"),
         notify=env("AMBIENT_DAILY_NOTIFY", "1") == "1",
+        glossary_file=Path(env("AMBIENT_DAILY_GLOSSARY")) if env("AMBIENT_DAILY_GLOSSARY") else None,
     )
 
 
@@ -309,10 +317,14 @@ HEX_COLOR_RE = re.compile(r"^[0-9a-f]{6}$")
 
 
 def frontmatter_tags(frontmatter: list[str]) -> list[str]:
+    return frontmatter_list(frontmatter, "tags")
+
+
+def frontmatter_list(frontmatter: list[str], key: str) -> list[str]:
     for index, line in enumerate(frontmatter):
-        if not line.startswith("tags:"):
+        if not line.startswith(f"{key}:"):
             continue
-        value = line[len("tags:") :].strip()
+        value = line[len(key) + 1 :].strip()
         if value.startswith("["):
             raw = value.strip("[]").split(",")
         elif value:
@@ -327,9 +339,17 @@ def frontmatter_tags(frontmatter: list[str]) -> list[str]:
     return []
 
 
-def vault_vocabulary(vault: Path) -> tuple[Counter, list[str]]:
+def vault_vocabulary(vault: Path) -> tuple[Counter, list[str], dict[str, str]]:
+    """Collects vault tags, note titles, and the names a link may use.
+
+    The last value maps each title and frontmatter alias to the note it
+    opens. Obsidian resolves [[x]] by file name only, so an alias has to be
+    written [[Title|alias]]; this map is what makes that rewrite possible.
+    """
     tags: Counter = Counter()
     titles = set()
+    stems: Counter = Counter()
+    aliases: dict[str, list[str]] = {}
     for note in vault.rglob("*.md"):
         rel = note.relative_to(vault)
         if any(part.startswith(".") for part in rel.parts):
@@ -349,7 +369,69 @@ def vault_vocabulary(vault: Path) -> tuple[Counter, list[str]]:
         tags.update(tag for tag in found if tag and not HEX_COLOR_RE.match(tag))
         if rel.parts[0] not in ("Daily", "Templates"):
             titles.add(note.stem)
-    return tags, sorted(titles)
+            stems[note.stem] += 1
+            aliases[note.stem] = aliases.get(note.stem, []) + frontmatter_list(frontmatter or [], "aliases")
+    names: dict[str, str] = {}
+    # A name shared by several notes (yearly "選考会") opens whichever note
+    # Obsidian picks first, so it is never linked by name alone.
+    unique = sorted(stem for stem, count in stems.items() if count == 1)
+    for stem in unique:
+        for alias in aliases[stem]:
+            names.setdefault(alias, stem)
+    # Titles win over aliases: [[x]] opens the note named x whatever aliases say.
+    names.update({stem: stem for stem in unique})
+    return tags, sorted(titles), names
+
+
+# --- Glossary ----------------------------------------------------------------------
+
+GLOSSARY_ITEM_RE = re.compile(r"^- `([^`]+)`(?: (→|with) `([^`]+)`)?\s*$")
+
+
+@dataclass
+class Glossary:
+    """The user's spelling decisions, kept in one Markdown file.
+
+    The same file goes into the prompt and drives the post-processing, so a
+    model that ignores it still produces the agreed spelling.
+    """
+
+    text: str = ""
+    replace: list[tuple[str, str]] = field(default_factory=list)
+    tag_synonyms: dict[str, str] = field(default_factory=dict)
+    redundant_tags: list[tuple[str, str]] = field(default_factory=list)
+    no_link: set[str] = field(default_factory=set)
+
+
+def parse_glossary(text: str) -> Glossary:
+    glossary = Glossary(text=text.strip())
+    section = ""
+    for line in text.splitlines():
+        if line.startswith("## "):
+            section = line[3:].strip().lower()
+            continue
+        match = GLOSSARY_ITEM_RE.match(line)
+        if not match:
+            continue
+        left, op, right = match.groups()
+        if section == "replace" and op == "→":
+            glossary.replace.append((left, right))
+        elif section == "tag synonyms" and op == "→":
+            glossary.tag_synonyms[left] = right
+        elif section == "redundant tags" and op == "with":
+            glossary.redundant_tags.append((left, right))
+        elif section == "no link" and not op:
+            glossary.no_link.add(left)
+    # Longest first, so "Arduino Uno Q" is replaced before any shorter entry.
+    glossary.replace.sort(key=lambda pair: -len(pair[0]))
+    return glossary
+
+
+def read_glossary(path: Path) -> Glossary:
+    try:
+        return parse_glossary(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return Glossary()
 
 
 # --- Generation ------------------------------------------------------------------
@@ -393,26 +475,39 @@ class GenerationError(Exception):
 
 
 def build_prompt(
-    template: str, date: dt.date, blocks: list[Block], kb_text: str, tags: Counter, titles: list[str]
+    template: str,
+    date: dt.date,
+    blocks: list[Block],
+    kb_text: str,
+    tags: Counter,
+    titles: list[str],
+    names: dict[str, str] | None = None,
+    glossary: str = "",
 ) -> str:
     tag_lines = "\n".join(f"{tag} ({count})" for tag, count in sorted(tags.items(), key=lambda kv: (-kv[1], kv[0])))
+    note_lines = []
+    for title in titles:
+        aliases = [name for name, target in (names or {}).items() if target == title and name != title]
+        note_lines.append(f"{title} (aliases: {', '.join(aliases)})" if aliases else title)
     return (
         template.replace("{{DATE}}", date.isoformat())
         .replace("{{TIMELINE}}", timeline_text(blocks))
         .replace("{{KB}}", kb_text)
         .replace("{{TAGS}}", tag_lines)
-        .replace("{{NOTES}}", "\n".join(titles))
+        .replace("{{NOTES}}", "\n".join(note_lines))
+        .replace("{{GLOSSARY}}", glossary)
     )
 
 
-def input_hash(template: str, blocks: list[Block], kb_text: str) -> str:
+def input_hash(template: str, blocks: list[Block], kb_text: str, glossary: str = "") -> str:
     """Fingerprints what the note is made from.
 
     Vault tags and titles are left out on purpose: they change whenever the
     user adds a note, and including them would regenerate a week of notes.
+    The glossary is in, because changing it is a deliberate wording decision.
     """
     digest = hashlib.sha256()
-    for part in (template, json.dumps(SCHEMA, sort_keys=True), timeline_text(blocks), kb_text):
+    for part in (template, json.dumps(SCHEMA, sort_keys=True), timeline_text(blocks), kb_text, glossary):
         digest.update(part.encode("utf-8"))
         digest.update(b"\0")
     return digest.hexdigest()[:16]
@@ -465,7 +560,9 @@ def generate(cfg: Config, prompt: str) -> dict:
 FIXED_TAGS = ("daily", "ambient-context")
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ITALIC_RE = re.compile(r"(?<![\w*])\*([^*\s][^*]*?)\*(?!\w)")
-TAG_LIKE_RE = re.compile(r"(^|\s)#(?=[^\s#])")
+# "#1082" is not an Obsidian tag (tags need a non-digit), so issue numbers
+# stay bare; escaping only some of them is what split "PR \#1" from "PR#1".
+TAG_LIKE_RE = re.compile(r"(^|\s)#(?=[^\s#])(?![0-9]+(?![0-9A-Za-z_/-]))")
 BARE_URL_RE = re.compile(r"(?<![<(])(https?://[^\s<>()（）「」。、]+)")
 AUTOLINK_RE = re.compile(r"<(https?://[^\s<>]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)>")
 # markdownlint MD034 flags bare e-mail addresses as well as bare URLs.
@@ -505,20 +602,182 @@ def clean_text(value: str) -> str:
     return LEADING_BLOCK_RE.sub(r"\\\1", text.strip())
 
 
-def normalize_tags(raw: list, vocab: Counter) -> list[str]:
+# --- Links and wording -------------------------------------------------------------
+
+REPO = r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*"
+GH_URL_RE = re.compile(rf"github\.com/({REPO})/(pull|issues)/(\d+)")
+GH_TITLE_RE = re.compile(rf"(Pull Request|Issue) #(\d+) · ({REPO})")
+GH_MAIL_RE = re.compile(rf"\[({REPO})\][^\n]*?\((PR|Pull Request|Issue) #(\d+)\)")
+# ASCII classes on purpose: \w matches kana and kanji, and "#1082が" must still match.
+GH_REF_RE = re.compile(
+    rf"(?:(?<![A-Za-z])(?i:(pull request|pr|issue))\s*)?(?:(?<![A-Za-z0-9_.-])({REPO}))?\\?#([0-9]+)(?![0-9A-Za-z_])"
+)
+WIKILINK_RE = re.compile(r"\[\[([^\]|#]+)(#[^\]|]*)?(?:\|([^\]]*))?\]\]")
+# Spans another step already produced or that must stay verbatim: links,
+# autolinks and code. Nothing inside them is rewritten.
+PROTECTED_RE = re.compile(r"\[\[[^\]]*\]\]|\[[^\]]*\]\([^)]*\)|<[^<>]*>|`[^`]*`")
+DATE_NAME_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+NUMERIC_NAME_RE = re.compile(r"[\d\s:._-]+")
+
+
+@dataclass
+class Polish:
+    names: dict[str, str] = field(default_factory=dict)
+    glossary: Glossary = field(default_factory=Glossary)
+    # Issue number -> {repository: "pull" | "issues"}, as seen in the day's input.
+    refs: dict[str, dict[str, str]] = field(default_factory=dict)
+    source: str = ""
+    link_re: re.Pattern | None = None
+
+
+def make_polish(names: dict[str, str], glossary: Glossary, source: str) -> Polish:
+    refs: dict[str, dict[str, str]] = {}
+    for repo, kind, number in GH_URL_RE.findall(source):
+        refs.setdefault(number, {})[repo] = kind
+    for kind, number, repo in GH_TITLE_RE.findall(source):
+        refs.setdefault(number, {}).setdefault(repo, "pull" if kind == "Pull Request" else "issues")
+    for repo, kind, number in GH_MAIL_RE.findall(source):
+        refs.setdefault(number, {}).setdefault(repo, "issues" if kind == "Issue" else "pull")
+    linkable = sorted(
+        (
+            name
+            for name in names
+            if len(name) >= 3 and name not in glossary.no_link and not NUMERIC_NAME_RE.fullmatch(name)
+        ),
+        key=lambda name: -len(name),
+    )
+    link_re = re.compile("|".join(re.escape(name) for name in linkable)) if linkable else None
+    return Polish(names, glossary, refs, source.lower(), link_re)
+
+
+def _edge_class(ch: str) -> str:
+    if ch.isascii() and (ch.isalnum() or ch in "_./-"):
+        return "ascii"
+    if "゠" <= ch <= "ヿ":
+        return "katakana"
+    return ""
+
+
+def _bounded(text: str, start: int, end: int) -> bool:
+    """Whether text[start:end] stands as a whole word.
+
+    Latin words must not touch other Latin, paths or repo names
+    ("sforzando/flipples-jp"), and katakana must not run on into more
+    katakana ("モニタリング" is not "モニタ"); kanji and hiragana have no
+    boundaries, so Japanese names match anywhere.
+    """
+    first, last = text[start], text[end - 1]
+    if start > 0 and _edge_class(first) and _edge_class(text[start - 1]) == _edge_class(first):
+        return False
+    if end < len(text) and _edge_class(last) and _edge_class(text[end]) == _edge_class(last):
+        return False
+    return True
+
+
+def _outside_protected(text: str, rewrite: Callable[[str], str]) -> str:
+    parts, last = [], 0
+    for match in PROTECTED_RE.finditer(text):
+        parts += [rewrite(text[last : match.start()]), match.group(0)]
+        last = match.end()
+    return "".join(parts + [rewrite(text[last:])])
+
+
+def _fix_wikilink(match: re.Match, polish: Polish) -> str:
+    target, heading, display = match.group(1).strip(), match.group(2) or "", match.group(3)
+    resolved = polish.names.get(target)
+    if resolved == target or DATE_NAME_RE.fullmatch(target):
+        return match.group(0)
+    if resolved:
+        return f"[[{resolved}{heading}|{display or target}]]"
+    # A link to a note that does not exist shows as a dead link; the plain
+    # name reads the same.
+    return display or target
+
+
+def _github_ref(match: re.Match, polish: Polish) -> str:
+    word, repo, number = match.groups()
+    before = match.string[match.start() - 1] if match.start() > 0 else ""
+    if not word and not repo and before.isascii() and before.isalnum():
+        return match.group(0)
+    label_kind = ("PR" if word.lower().startswith("p") else "Issue") if word else ""
+    label = f"{label_kind} #{number}" if label_kind else f"#{number}"
+    seen = polish.refs.get(number, {})
+    # A repository the model names is trusted only if the day's input shows
+    # it; otherwise a plausible but invented repo would get a working-looking link.
+    if repo and repo.lower() in polish.source:
+        chosen = repo
+    elif len(seen) == 1:
+        chosen = next(iter(seen))
+    else:
+        return label
+    kind = seen.get(chosen) or ("pull" if label_kind == "PR" else "issues")
+    return f"[{label}](https://github.com/{chosen}/{kind}/{number})"
+
+
+def _replace_word(text: str, old: str, new: str) -> str:
+    def swap(match: re.Match) -> str:
+        start, end = match.span()
+        # The canonical form may start with the variant (サーバ → サーバー).
+        if not _bounded(text, start, end) or text.startswith(new, start):
+            return old
+        return new
+
+    return re.sub(re.escape(old), swap, text)
+
+
+def _replace_words(text: str, glossary: Glossary) -> str:
+    for old, new in glossary.replace:
+        text = _replace_word(text, old, new)
+    return text
+
+
+def _autolink(text: str, polish: Polish) -> str:
+    if polish.link_re is None:
+        return text
+
+    def link(match: re.Match) -> str:
+        name = match.group(0)
+        if not _bounded(text, match.start(), match.end()):
+            return name
+        target = polish.names[name]
+        return f"[[{name}]]" if target == name else f"[[{target}|{name}]]"
+
+    return polish.link_re.sub(link, text)
+
+
+def polish_text(text: str, polish: Polish | None) -> str:
+    """Applies links and the glossary to one cleaned line.
+
+    Runs after clean_text so the links it adds are never escaped, and each
+    step skips what the earlier ones produced.
+    """
+    if polish is None:
+        return text
+    text = WIKILINK_RE.sub(lambda match: _fix_wikilink(match, polish), text)
+    text = _outside_protected(text, lambda part: GH_REF_RE.sub(lambda match: _github_ref(match, polish), part))
+    text = _outside_protected(text, lambda part: _replace_words(part, polish.glossary))
+    return _outside_protected(text, lambda part: _autolink(part, polish))
+
+
+def normalize_tags(raw: list, vocab: Counter, glossary: Glossary | None = None) -> list[str]:
+    glossary = glossary or Glossary()
     tags: list[str] = []
     for item in raw:
         tag = re.sub(r"\s+", "-", str(item).strip().lstrip("#").lower())
+        tag = glossary.tag_synonyms.get(tag, tag)
         if not tag or tag in FIXED_TAGS or tag in tags:
             continue
         # Existing vault tags pass as they are, even when not kebab-case,
         # because reusing the user's vocabulary is the point.
         if tag in vocab or KEBAB_RE.match(tag):
             tags.append(tag)
+    for redundant, kept in glossary.redundant_tags:
+        if redundant in tags and kept in tags:
+            tags.remove(redundant)
     return tags[:6]
 
 
-def _cited_texts(items: list, blocks: list[Block]) -> list[tuple[str, str]]:
+def _cited_texts(items: list, blocks: list[Block], polish: Polish | None = None) -> list[tuple[str, str]]:
     result = []
     for item in items:
         if not isinstance(item, dict):
@@ -528,26 +787,26 @@ def _cited_texts(items: list, blocks: list[Block]) -> list[tuple[str, str]]:
         # house style for cited lines; models add the period only sometimes.
         text = clean_text(str(item.get("text", ""))).rstrip("。．. ")
         if cited and text:
-            result.append((text, cited))
+            result.append((polish_text(text, polish), cited))
     return result
 
 
-def normalize(raw: dict, blocks: list[Block], vocab: Counter) -> Note | None:
+def normalize(raw: dict, blocks: list[Block], vocab: Counter, polish: Polish | None = None) -> Note | None:
     time_use = []
     for item in raw.get("time_use") or []:
         if not isinstance(item, dict):
             continue
         cited = snap_range(str(item.get("range", "")), blocks)
-        label = clean_text(str(item.get("label", "")))
+        label = polish_text(clean_text(str(item.get("label", ""))), polish)
         apps = [clean_text(str(app)) for app in item.get("apps") or [] if clean_text(str(app))]
         if cited and label:
             time_use.append((cited, label, apps))
     note = Note(
-        narrative=_cited_texts(raw.get("narrative") or [], blocks),
+        narrative=_cited_texts(raw.get("narrative") or [], blocks, polish),
         time_use=sorted(time_use),
-        outcomes=_cited_texts(raw.get("outcomes") or [], blocks),
-        open=_cited_texts(raw.get("open") or [], blocks),
-        tags=normalize_tags(raw.get("tags") or [], vocab),
+        outcomes=_cited_texts(raw.get("outcomes") or [], blocks, polish),
+        open=_cited_texts(raw.get("open") or [], blocks, polish),
+        tags=normalize_tags(raw.get("tags") or [], vocab, polish.glossary if polish else None),
     )
     if not note.narrative or not note.time_use:
         return None
@@ -733,19 +992,24 @@ def process_day(cfg: Config, date: dt.date, force: bool = False, dry_run: bool =
         return "failed"
     kb_text = read_kb(cfg.ac_root / "KB" / date.isoformat())
     template = cfg.prompt_file.read_text(encoding="utf-8")
-    digest = input_hash(template, blocks, kb_text)
+    glossary = read_glossary(cfg.glossary_path)
+    digest = input_hash(template, blocks, kb_text, glossary.text)
     path = cfg.current_note(date)
     if not force and path == cfg.note_path(date) and path.exists():
         _, body = split_frontmatter(path.read_text(encoding="utf-8"))
         if old_meta(body)[0] == digest:
             return "skipped"
-    vocab, titles = vault_vocabulary(cfg.vault)
+    vocab, titles, names = vault_vocabulary(cfg.vault)
     try:
-        raw = generate(cfg, build_prompt(template, date, blocks, kb_text, vocab, titles))
+        raw = generate(cfg, build_prompt(template, date, blocks, kb_text, vocab, titles, names, glossary.text))
     except GenerationError as err:
         log(f"{date}: {err}")
         return "failed"
-    note = normalize(raw, blocks, vocab)
+    # The raw capture, not the parsed timeline: a block keeps only its first
+    # URL, and the GitHub links need every URL and window title of the day.
+    apps = cfg.ac_root / "Days" / date.isoformat() / "apps.md"
+    source = apps.read_text(encoding="utf-8") + "\n" + kb_text
+    note = normalize(raw, blocks, vocab, make_polish(names, glossary, source))
     if note is None:
         log(f"{date}: generated content had no usable narrative or time use")
         return "failed"

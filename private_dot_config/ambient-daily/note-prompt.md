@@ -10,7 +10,8 @@ Your answer is JSON that a script renders into Markdown, so write content only a
   It is the clock of the day.
 - Knowledge base: notes an earlier pass extracted from the full record, each line citing its time range.
   It is the evidence; prefer it over guessing from window titles.
-- Vault tags with usage counts, and vault note titles: the user's existing vocabulary.
+- Vault tags with usage counts, and vault note titles with their aliases: the user's existing vocabulary.
+- Glossary: the user's spelling decisions.
 
 ## Fields
 
@@ -24,15 +25,17 @@ Your answer is JSON that a script renders into Markdown, so write content only a
 ## Rules
 
 - Write every text in Japanese.
-  Keep product, project and person names as they appear.
-- Each item is one sentence with no line breaks and no Markdown: no bold, italics, headings, bullets or `#`.
+  Keep product, project and person names as they appear, in their usual capitalization (macOS, GitHub, Obsidian), and follow the glossary.
+  Tags are for the tags field only; never write a tag such as `macos` or `electronics` in a text.
+- Each item is one sentence with no line breaks and no Markdown: no bold, italics, headings, bullets or `#` other than in issue and pull request references.
 - range is `HH:MM-HH:MM` taken from the timeline and covering the evidence for that item.
   Never put a time inside the text.
 - Ground every claim in the timeline or the knowledge base, and leave a field short rather than padding it.
   What the user did (writing, configuring, replying, deciding) outranks what they only saw.
 - Summarize sensitive content (health, finance, family, personal messages) at the category level without details.
-- Wrap a project, person or topic in `[[...]]` when it names a note in the vault titles, spelled exactly as listed.
-  You may also link a recurring project or person that has no note yet.
+- Wrap a project, person or topic in `[[...]]` only when it names a note in the vault titles or one of its aliases, spelled exactly as listed.
+  Never link anything that has no note.
+- Write a GitHub issue or pull request as `Issue owner/repo#123` or `PR owner/repo#123` when the input shows its repository, otherwise as `Issue #123` or `PR #123`.
 - Prefer tags from the vault list, spelled exactly as listed.
   Create a new tag only when nothing there fits, in lowercase English kebab-case.
   Do not use `daily` or `ambient-context`.
@@ -52,3 +55,7 @@ Your answer is JSON that a script renders into Markdown, so write content only a
 ## Vault note titles
 
 {{NOTES}}
+
+## Glossary
+
+{{GLOSSARY}}
