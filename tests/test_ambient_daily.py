@@ -742,6 +742,54 @@ class LinkAndWordingTest(unittest.TestCase):
         self.assertEqual(note.narrative, [("午後は[[Flipples]]の定例で日程を詰めた", "13:04-15:16")])
 
 
+class RelinkTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(dir="/tmp")
+        self.root = Path(self.tmp.name)
+        self.cfg = make_config(self.root)
+        self.cfg.daily_dir.mkdir(parents=True)
+        self.date = dt.date(2026, 10, 1)
+        raw = dict(
+            PAYLOAD,
+            time_use=[{"range": "13:04-15:16", "label": "Flipples 定例", "apps": ["Flipples"]}],
+            open=[{"text": "[[Dropbox]]のプラン検討", "range": "15:20-15:25"}],
+        )
+        # Written without links, as a note made before the vault note existed.
+        note = ad.normalize(raw, ad.parse_timeline(APPS_MD), Counter())
+        ad.write_note(self.cfg, self.date, ad.render_section(note, "0123456789abcdef"), note.tags)
+        self.path = self.cfg.note_path(self.date)
+        self.stderr = contextlib.redirect_stderr(io.StringIO())
+        self.stderr.__enter__()
+
+    def tearDown(self):
+        self.stderr.__exit__(None, None, None)
+        self.tmp.cleanup()
+
+    def test_relink_links_text_but_not_apps_and_keeps_the_hash(self):
+        before = self.path.read_text(encoding="utf-8")
+        self.assertEqual(ad.relink_day(self.cfg, self.date, {"Flipples": "Flipples"}, ad.Glossary()), "generated")
+        text = self.path.read_text(encoding="utf-8")
+        self.assertIn("午後は[[Flipples]]の定例で日程を詰めた 13:04-15:16", text)
+        self.assertIn("- 13:04-15:16 [[Flipples]] 定例（Flipples）", text)
+        self.assertIn("- [ ] Dropboxのプラン検討 15:20-15:25", text)
+        self.assertIn("<!-- ambient-daily: in=0123456789abcdef tags=flipples,video -->", text)
+        self.assertEqual(before.count("\n"), text.count("\n"))
+
+    def test_relink_is_idempotent(self):
+        names = {"Flipples": "Flipples"}
+        ad.relink_day(self.cfg, self.date, names, ad.Glossary())
+        after = self.path.read_text(encoding="utf-8")
+        self.assertEqual(ad.relink_day(self.cfg, self.date, names, ad.Glossary()), "skipped")
+        self.assertEqual(self.path.read_text(encoding="utf-8"), after)
+
+    def test_main_relinks_every_note_without_calling_claude(self):
+        (self.cfg.ac_root / "Days").mkdir(parents=True)
+        (self.cfg.vault / "Hacking Papa").mkdir(parents=True)
+        (self.cfg.vault / "Hacking Papa" / "Flipples.md").write_text("x", encoding="utf-8")
+        self.assertEqual(ad.main(["--relink"], cfg=self.cfg, today=dt.date(2026, 10, 7)), 0)
+        self.assertIn("[[Flipples]]の定例", self.path.read_text(encoding="utf-8"))
+
+
 class PipelineTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(dir="/tmp")

@@ -1023,12 +1023,91 @@ def process_day(cfg: Config, date: dt.date, force: bool = False, dry_run: bool =
     return "generated" if changed else "skipped"
 
 
+CITED_LINE_RE = re.compile(r"^(- \[ \] |- )?(.*) (\d{2}:\d{2}-\d{2}:\d{2})$")
+TIME_USE_LINE_RE = re.compile(r"^- (\d{2}:\d{2}-\d{2}:\d{2}) (.*?)((?:（[^（）]*）)?)$")
+
+
+def _relink_line(line: str, in_time_use: bool, polish: Polish) -> str:
+    if in_time_use:
+        match = TIME_USE_LINE_RE.match(line)
+        # The trailing (apps) list names applications, not topics; a note
+        # called "cmux" must not turn the app name into a link.
+        return f"- {match[1]} {polish_text(match[2], polish)}{match[3]}" if match else line
+    match = CITED_LINE_RE.match(line)
+    return f"{match[1] or ''}{polish_text(match[2], polish)} {match[3]}" if match else line
+
+
+def relink_section(body: list[str], polish: Polish) -> list[str] | None:
+    """Re-applies links and the glossary to an existing managed block.
+
+    The meta comment and its input hash are kept, so the next morning run
+    still sees the note as up to date and does not regenerate it.
+    """
+    try:
+        start, end = body.index(START_MARKER), body.index(END_MARKER)
+    except ValueError:
+        return None
+    section, in_time_use = [], False
+    for line in body[start : end + 1]:
+        if line.startswith("#"):
+            in_time_use = line == "### 時間の使い方"
+            section.append(line)
+        elif not line or line.startswith("<!--"):
+            section.append(line)
+        else:
+            section.append(_relink_line(line, in_time_use, polish))
+    return section
+
+
+def daily_dates(cfg: Config) -> list[dt.date]:
+    dates = set()
+    for path in list(cfg.daily_dir.glob("*.md")) + list(cfg.daily_dir.glob("*/*.md")):
+        try:
+            dates.add(dt.date.fromisoformat(path.stem))
+        except ValueError:
+            continue
+    return sorted(dates)
+
+
+def relink_day(cfg: Config, date: dt.date, names: dict[str, str], glossary: Glossary, dry_run: bool = False) -> str:
+    path = cfg.current_note(date)
+    if not path.exists():
+        return "skipped"
+    _, body = split_frontmatter(path.read_text(encoding="utf-8"))
+    parts = []
+    apps = cfg.ac_root / "Days" / date.isoformat() / "apps.md"
+    if apps.exists():
+        parts.append(apps.read_text(encoding="utf-8"))
+    kb_dir = cfg.ac_root / "KB" / date.isoformat()
+    if kb_is_ready(kb_dir):
+        parts.append(read_kb(kb_dir))
+    section = relink_section(body, make_polish(names, glossary, "\n".join(parts)))
+    if section is None:
+        return "skipped"
+    try:
+        changed = write_note(cfg, date, section, old_meta(body)[1], dry_run)
+    except MarkerError as err:
+        log(f"{date}: {path}: {err}; left untouched")
+        return "failed"
+    if changed:
+        log(f"{date}: {'would relink' if dry_run else 'relinked'} {cfg.note_path(date)}")
+    return "generated" if changed else "skipped"
+
+
 def _process_day_safely(cfg: Config, date: dt.date, force: bool, dry_run: bool) -> str:
     # One day's surprise (a malformed socket reply, an unreadable note, a
     # missing prompt) must not stop the other days or skip the summary line
     # and notification; the applet swallows uncaught errors silently.
     try:
         return process_day(cfg, date, force, dry_run)
+    except Exception as err:
+        log(f"{date}: unexpected {type(err).__name__}: {err}")
+        return "failed"
+
+
+def _relink_day_safely(cfg: Config, date: dt.date, names: dict[str, str], glossary: Glossary, dry_run: bool) -> str:
+    try:
+        return relink_day(cfg, date, names, glossary, dry_run)
     except Exception as err:
         log(f"{date}: unexpected {type(err).__name__}: {err}")
         return "failed"
@@ -1047,6 +1126,11 @@ def main(argv: list[str] | None = None, cfg: Config | None = None, today: dt.dat
     parser.add_argument("--date", type=dt.date.fromisoformat, help="process only this day (YYYY-MM-DD)")
     parser.add_argument("--force", action="store_true", help="regenerate even if the inputs are unchanged")
     parser.add_argument("--dry-run", action="store_true", help="print the note instead of writing it")
+    parser.add_argument(
+        "--relink",
+        action="store_true",
+        help="re-apply vault links and the glossary to every existing note (or --date) without calling Claude",
+    )
     args = parser.parse_args(argv)
     cfg = cfg or load_config()
     today = today or dt.date.today()
@@ -1066,8 +1150,14 @@ def main(argv: list[str] | None = None, cfg: Config | None = None, today: dt.dat
             log(f"ERROR cannot read the capture or the vault: {err}")
             notify_failure(cfg, "Cannot read Ambient Context or the vault. See ~/Library/Logs/ambient-daily.log")
             return 1
-        dates = [args.date] if args.date else target_dates(cfg, today)
-        counts: Counter = Counter(_process_day_safely(cfg, date, args.force, args.dry_run) for date in dates)
+        if args.relink:
+            dates = [args.date] if args.date else daily_dates(cfg)
+            _, _, names = vault_vocabulary(cfg.vault)
+            glossary = read_glossary(cfg.glossary_path)
+            counts = Counter(_relink_day_safely(cfg, date, names, glossary, args.dry_run) for date in dates)
+        else:
+            dates = [args.date] if args.date else target_dates(cfg, today)
+            counts = Counter(_process_day_safely(cfg, date, args.force, args.dry_run) for date in dates)
         log(
             f"checked {len(dates)} days, generated {counts['generated']}, "
             f"skipped {counts['skipped']}, failed {counts['failed']}"
