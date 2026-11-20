@@ -6,6 +6,16 @@ project=$(basename "$cwd")
 notification_type=$(echo "$input" | jq -r '.notification_type')
 message=$(echo "$input" | jq -r '.message // empty')
 
+osascript_notify() {
+  # Pass values via argv so quotes in the message cannot break the AppleScript source
+  [[ -x /usr/bin/osascript ]] || return 1
+  /usr/bin/osascript \
+    -e 'on run argv' \
+    -e 'display notification (item 2 of argv) with title (item 1 of argv) subtitle (item 3 of argv) sound name (item 4 of argv)' \
+    -e 'end run' \
+    "$1" "$2" "$project" "$3" 2>/dev/null
+}
+
 notify() {
   local title="$1"
   local message="$2"
@@ -15,11 +25,14 @@ notify() {
   if [[ -n ${CMUX_WORKSPACE_ID:-} ]] && [[ -n ${CMUX_SURFACE_ID:-} ]] && command -v cmux &>/dev/null; then
     cmux notify --title "$title" --subtitle "$project" --body "$message"
   elif command -v terminal-notifier &>/dev/null; then
-    terminal-notifier -title "$title" -subtitle "$project" -message "$message" -sound "$sound"
+    # terminal-notifier exits non-zero when macOS notification permission is denied;
+    # fall back to osascript instead of losing the notification entirely
+    terminal-notifier -title "$title" -subtitle "$project" -message "$message" -sound "$sound" 2>/dev/null ||
+      osascript_notify "$title" "$message" "$sound"
   elif command -v notify-send &>/dev/null; then
-    timeout 5 notify-send -u "$urgency" "$title ($project)" "$message" 2>/dev/null || true
-  elif [[ -x /usr/bin/osascript ]]; then
-    /usr/bin/osascript -e "display notification \"$message\" with title \"$title\" subtitle \"$project\""
+    timeout 5 notify-send -u "$urgency" "$title ($project)" "$message" 2>/dev/null
+  else
+    osascript_notify "$title" "$message" "$sound"
   fi
 }
 
@@ -43,3 +56,6 @@ case "$notification_type" in
     notify "Claude Code" "${message:-Notification}" "default" "normal"
     ;;
 esac
+
+# A failed notification must not surface as a failed Claude Code hook
+exit 0
