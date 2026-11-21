@@ -350,6 +350,7 @@
     "feature-dev@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
+    "modern-web-guidance@googlechrome": true,
     "playwright@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
@@ -380,6 +381,12 @@
       "source": {
         "source": "github",
         "repo": "jgraph/drawio-mcp"
+      }
+    },
+    "googlechrome": {
+      "source": {
+        "source": "github",
+        "repo": "GoogleChrome/modern-web-guidance"
       }
     },
     "wakatime": {
