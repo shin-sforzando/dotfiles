@@ -13,6 +13,22 @@ For the Pull Request side, see `pr-defaults`.
 
 Decision rule (maintainer-confirmed): **a bug → `fix`; anything that is not a bug → `feat`.**
 
+Format the title like a cz-emoji commit subject, with the emoji as a Unicode character:
+
+```plain
+<type>: <emoji> <subject>
+```
+
+| type  | title prefix |
+| ----- | ------------ |
+| feat  | `feat: ✨`   |
+| fix   | `fix: 🐛`    |
+
+- Why: titles are read in places that do not expand `:shortcode:` (CLI output, notifications, branch pickers), so a literal emoji renders everywhere
+- Subject in English, starting with a lowercase letter, no scope — the same rules as the commit subject
+- If the user explicitly asks for another type from `~/.czrc` (e.g. `docs`, `chore`), use that type's emoji from the same table
+- Example: `gh issue create --title "feat: ✨ fold GenCo concepts into the architecture docs" ...`
+
 ## 2. Assignee → self
 
 If no assignee was specified, self-assign:
