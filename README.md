@@ -147,6 +147,29 @@ chezmoi apply
 #    AgentDeck action on every key it may use (a dedicated page works best).
 #    Plugins live in ~/Library/Application Support/Ulanzi/UlanziDeck/Plugins/.
 # c. Start a new Claude Code session; each session gets its own key.
+
+# 8. (macOS) Orca settings
+# Orca keeps its settings in a SQLite profile DB alongside session and tab state,
+# so chezmoi cannot sync them; set them by hand in Orca Settings on every Mac.
+# chezmoi already ships the cask, the font (Brewfile) and Orca's agent status
+# hooks in ~/.claude/settings.json.
+# a. Launch Orca, finish onboarding and sign in (Bots and GitHub need the account).
+# b. Match the Mac Studio (setting key in parentheses):
+#    - Language: Japanese (uiLanguage)
+#    - App font: NotoSansM NFM (appFontFamily)
+#    - Terminal font: UDEV Gothic NF, 15 (terminalFontFamily, terminalFontSize)
+#    - Terminal themes: Kanagawa dark, Builtin Tango Light light (terminalThemeDark/Light)
+#    - Chat: match the terminal interface (nativeChatAppearance)
+#    - Branch prefix: none (branchPrefix)
+#    - Source control AI, commit message prompt: paste assets/orca/commit-message-prompt.txt
+#      (commitMessageAi.customPrompt; fill every commit-prompt field the UI shows)
+#    Agent permissions stay at the default (full-access) until a policy is chosen.
+# c. Add projects with Add Repo, but never create Orca workspaces for the chezmoi
+#    source repo: apply deploys whatever its checkout holds, so work on main only.
+# d. Verify the values (read-only; Orca may hold newer edits in memory until it writes):
+sqlite3 -readonly "$HOME/Library/Application Support/orca/profiles/local-default/profile-state.db" \
+  "select payload from profile_state_documents where domain='settings'" |
+  jq '{uiLanguage, appFontFamily, terminalFontFamily, terminalFontSize, terminalThemeDark, terminalThemeLight, nativeChatAppearance, branchPrefix, commitPrompt: .commitMessageAi.customPrompt}'
 ```
 
 > [!NOTE]

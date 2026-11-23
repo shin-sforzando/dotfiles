@@ -1,0 +1,6 @@
+Follow this repository's commit convention strictly (cz-emoji):
+- Format: "<type>: :<emoji>: <subject>" with no scope, e.g. "fix: :bug: abandon dropped video jobs"
+- Use only these type/emoji pairs: feat :sparkles: / fix :bug: / wip :construction: / chore :paperclip: / style :art: / docs :notebook: / perf :zap: / refactor :bulb: / test :100: / release :tada:
+- Write the emoji as its text code (e.g. :sparkles:), never as a Unicode emoji character
+- Subject and body in American English, subject starts lowercase, 72 chars max
+- Never reference issue numbers in the subject

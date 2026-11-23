@@ -1,6 +1,7 @@
 ## Add Homebrew taps
 tap "rhysd/hgrep", "https://github.com/rhysd/hgrep"
 tap "satococoa/tap"
+tap "stablyai/orca"
 
 ## Install Packages
 # Simple, modern file encryption; age-keygen creates the 1Password-held backup recipient for fnox
@@ -331,6 +332,7 @@ if OS.mac?
   cask "font-genshingothic"
   cask "font-hackgen-nerd"
   cask "font-mononoki-nerd-font"
+  cask "font-noto-nerd-font"
   cask "font-udev-gothic-nf"
 
   # Terminal emulator that uses platform-native UI and GPU acceleration
@@ -359,6 +361,9 @@ if OS.mac?
 
   # Markdown-based knowledge base
   cask "obsidian"
+
+  # Agent development environment: one git worktree per task, agents in parallel
+  cask "stablyai/orca/orca"
 
   # Text actions and productivity tool
   cask "popclip"
