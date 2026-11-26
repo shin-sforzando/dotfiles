@@ -502,6 +502,7 @@
     "claude-code-wakatime@wakatime": true,
     "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
+    "composio@composio": true,
     "context-mode@context-mode": true,
     "context7@claude-plugins-official": true,
     "crit@crit": true,
@@ -524,6 +525,12 @@
       "source": {
         "source": "github",
         "repo": "lambdalisue/cclens"
+      }
+    },
+    "composio": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/ComposioHQ/composio-plugin-cc.git"
       }
     },
     "context-mode": {
