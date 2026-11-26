@@ -161,15 +161,19 @@ chezmoi apply
 #    - Terminal themes: Kanagawa dark, Builtin Tango Light light (terminalThemeDark/Light)
 #    - Chat: match the terminal interface (nativeChatAppearance)
 #    - Branch prefix: none (branchPrefix)
-#    - Source control AI, commit message prompt: paste assets/orca/commit-message-prompt.txt
-#      (commitMessageAi.customPrompt; fill every commit-prompt field the UI shows)
+#    - Git & Source Control > Action recipes > Commit message > Command template:
+#      keep {basePrompt} on the first line, add a blank line, then paste
+#      assets/orca/commit-message-prompt.txt
+#      (sourceControlAi.actions.commitMessage.commandInputTemplate). Dropping
+#      {basePrompt} also drops Orca's built-in prompt and the diff context it carries.
+#      Orca mirrors the text after {basePrompt} into the legacy commitMessageAi.customPrompt
 #    Agent permissions stay at the default (full-access) until a policy is chosen.
 # c. Add projects with Add Repo, but never create Orca workspaces for the chezmoi
 #    source repo: apply deploys whatever its checkout holds, so work on main only.
 # d. Verify the values (read-only; Orca may hold newer edits in memory until it writes):
 sqlite3 -readonly "$HOME/Library/Application Support/orca/profiles/local-default/profile-state.db" \
   "select payload from profile_state_documents where domain='settings'" |
-  jq '{uiLanguage, appFontFamily, terminalFontFamily, terminalFontSize, terminalThemeDark, terminalThemeLight, nativeChatAppearance, branchPrefix, commitPrompt: .commitMessageAi.customPrompt}'
+  jq '{uiLanguage, appFontFamily, terminalFontFamily, terminalFontSize, terminalThemeDark, terminalThemeLight, nativeChatAppearance, branchPrefix, commitTemplate: .sourceControlAi.actions.commitMessage.commandInputTemplate}'
 ```
 
 > [!NOTE]
