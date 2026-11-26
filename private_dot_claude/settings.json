@@ -2,7 +2,11 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "attribution": false,
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
   "permissions": {
     "allow": [
       "Bash(cat *)",
@@ -83,16 +87,6 @@
         ]
       },
       {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
@@ -123,16 +117,6 @@
         ]
       },
       {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
-      {
         "matcher": "",
         "hooks": [
           {
@@ -148,16 +132,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/context-mode-cache-heal.mjs"
-          }
-        ]
-      },
-      {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
           }
         ]
       },
@@ -211,16 +185,6 @@
     ],
     "PostToolUse": [
       {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
@@ -241,16 +205,6 @@
       }
     ],
     "PermissionRequest": [
-      {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
       {
         "matcher": "*",
         "hooks": [
@@ -273,16 +227,6 @@
     ],
     "SubagentStart": [
       {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
-      {
         "matcher": "",
         "hooks": [
           {
@@ -303,16 +247,6 @@
     ],
     "SubagentStop": [
       {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
-      {
         "matcher": "",
         "hooks": [
           {
@@ -332,16 +266,6 @@
       }
     ],
     "SessionEnd": [
-      {
-        "_pixtuoid": true,
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PIXTUOID_SOURCE=claude-code 'pixtuoid-hook'"
-          }
-        ]
-      },
       {
         "matcher": "",
         "hooks": [
@@ -502,7 +426,6 @@
     "claude-code-wakatime@wakatime": true,
     "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
-    "composio@composio": true,
     "context-mode@context-mode": true,
     "context7@claude-plugins-official": true,
     "crit@crit": true,
@@ -518,19 +441,15 @@
     "security-guidance@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true,
+    "composio@composio": true,
+    "pixtuoid@pixtuoid": true
   },
   "extraKnownMarketplaces": {
     "cclens": {
       "source": {
         "source": "github",
         "repo": "lambdalisue/cclens"
-      }
-    },
-    "composio": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/ComposioHQ/composio-plugin-cc.git"
       }
     },
     "context-mode": {
@@ -562,6 +481,18 @@
         "source": "git",
         "url": "https://github.com/wakatime/claude-code-wakatime.git"
       }
+    },
+    "composio": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/ComposioHQ/composio-plugin-cc.git"
+      }
+    },
+    "pixtuoid": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/suzuki/.config/pixtuoid/claude-plugin"
+      }
     }
   },
   "language": "japanese",
@@ -578,11 +509,6 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "//hooks.PreToolUse[ctx-observer]": "Prints ctx_execute/ctx_execute_file/ctx_batch_execute inputs as systemMessage AND returns permissionDecision:allow to auto-approve these sandbox/read tools. Why: plan mode ignores permissions.allow, so the ctx_* wildcard alone still prompts every call; the hook allow skips the prompt while keeping plan mode. Scope is limited to context-mode ctx_*execute (matcher); all other tools stay under normal plan-mode gating. settings.json is strict JSON (no // or /* */ comments); this dummy key is the JSON-safe way to annotate. See .claude/plans/ctx-batch-execute-eager-dawn.md",
-  "//hooks.PreToolUse[ctx-readonly-allow]": "Same plan-mode workaround as ctx-observer, for the retrieval-side ctx_* tools whose tool_input shape (requests/queries/path) the observer's jq formatter cannot render. Kept as a separate entry so the formatter stays untouched: if that jq ever exits non-zero the hook output is discarded and the allow is lost with it. Destructive or state-changing tools (ctx_purge, ctx_upgrade) are deliberately excluded and stay under normal gating.",
-  "//hooks.PreToolUse[drawio-readonly-allow]": "Same plan-mode workaround again, for the read-only tools of the drawio MCP server. Why: drawing an infrastructure diagram means calling search_shapes many times in a row to resolve vendor icon styles, and plan mode ignores the mcp__drawio__* entry in permissions.allow, so every lookup would prompt. set_page (writes a .drawio file) and open_drawio_xml (launches an external browser) are deliberately excluded and stay under normal gating.",
-  "//mcpServers": "Left empty on purpose. Claude Code does not read mcpServers from settings.json — an entry here never shows up in `claude mcp list`. User-scoped servers live in ~/.claude.json, which .chezmoiignore excludes, so they are declared in .chezmoiscripts/run_onchange_after_claude-mcp-servers.sh instead.",
-  "mcpServers": {},
   "autoMode": {
     "environment": [
       "### Org-wide",
@@ -610,5 +536,10 @@
       "**Org-specific CLIs**: None configured — chezmoi, wtp, gh, drawio MCP are personal tooling, not org-specific",
       "**routine under shin-sforzando/dotfiles prefix**: chezmoi apply/diff/re-add and git operations scoped to this repo's working tree are routine"
     ]
-  }
+  },
+  "//hooks.PreToolUse[ctx-observer]": "Prints ctx_execute/ctx_execute_file/ctx_batch_execute inputs as systemMessage AND returns permissionDecision:allow to auto-approve these sandbox/read tools. Why: plan mode ignores permissions.allow, so the ctx_* wildcard alone still prompts every call; the hook allow skips the prompt while keeping plan mode. Scope is limited to context-mode ctx_*execute (matcher); all other tools stay under normal plan-mode gating. settings.json is strict JSON (no // or /* */ comments); this dummy key is the JSON-safe way to annotate. See .claude/plans/ctx-batch-execute-eager-dawn.md",
+  "//hooks.PreToolUse[ctx-readonly-allow]": "Same plan-mode workaround as ctx-observer, for the retrieval-side ctx_* tools whose tool_input shape (requests/queries/path) the observer's jq formatter cannot render. Kept as a separate entry so the formatter stays untouched: if that jq ever exits non-zero the hook output is discarded and the allow is lost with it. Destructive or state-changing tools (ctx_purge, ctx_upgrade) are deliberately excluded and stay under normal gating.",
+  "//hooks.PreToolUse[drawio-readonly-allow]": "Same plan-mode workaround again, for the read-only tools of the drawio MCP server. Why: drawing an infrastructure diagram means calling search_shapes many times in a row to resolve vendor icon styles, and plan mode ignores the mcp__drawio__* entry in permissions.allow, so every lookup would prompt. set_page (writes a .drawio file) and open_drawio_xml (launches an external browser) are deliberately excluded and stay under normal gating.",
+  "//mcpServers": "Left empty on purpose. Claude Code does not read mcpServers from settings.json — an entry here never shows up in `claude mcp list`. User-scoped servers live in ~/.claude.json, which .chezmoiignore excludes, so they are declared in .chezmoiscripts/run_onchange_after_claude-mcp-servers.sh instead.",
+  "mcpServers": {}
 }
